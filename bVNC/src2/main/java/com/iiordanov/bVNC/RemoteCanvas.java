@@ -130,6 +130,7 @@ public class RemoteCanvas extends android.support.v7.widget.AppCompatImageView i
     ProgressDialog pd;
 
     // Used to set the contents of the clipboard.
+    //https://stackoverflow.com/a/26286534
     ClipboardManager clipboard;
     Timer clipboardMonitorTimer;
     ClipboardMonitor clipboardMonitor;
