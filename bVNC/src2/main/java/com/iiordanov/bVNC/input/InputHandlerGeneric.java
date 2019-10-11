@@ -47,7 +47,7 @@ abstract class InputHandlerGeneric extends GestureDetector.SimpleOnGestureListen
 	protected PanRepeater panRepeater;
 	
 	// Used to generate haptic feedback
-    protected Vibrator myVibrator;
+    //protected Vibrator myVibrator;
 	
 	// This is the initial "focal point" of the gesture (between the two fingers).
 	float xInitialFocus;
@@ -139,7 +139,7 @@ abstract class InputHandlerGeneric extends GestureDetector.SimpleOnGestureListen
 		
 		gestureDetector.setOnDoubleTapListener(this);
 		
-	    this.myVibrator = myVibrator;
+	    //this.myVibrator = myVibrator;
 	    this.panRepeater = new PanRepeater (canvas, canvas.handler);
 	    
 	    displayDensity = canvas.getDisplayDensity();
@@ -345,7 +345,7 @@ abstract class InputHandlerGeneric extends GestureDetector.SimpleOnGestureListen
 		if (secondPointerWasDown || thirdPointerWasDown)
 			return;
 		
-		myVibrator.vibrate(Constants.SHORT_VIBRATION);
+		//myVibrator.vibrate(Constants.SHORT_VIBRATION);
 
 		dragMode = true;
 		pointer.leftButtonDown(getX(e), getY(e), metaState);

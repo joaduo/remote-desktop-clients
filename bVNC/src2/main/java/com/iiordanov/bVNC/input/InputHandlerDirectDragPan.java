@@ -71,7 +71,7 @@ public class InputHandlerDirectDragPan extends InputHandlerGeneric {
 		if (secondPointerWasDown || thirdPointerWasDown)
 			return;
 		
-		myVibrator.vibrate(Constants.SHORT_VIBRATION);
+		//myVibrator.vibrate(Constants.SHORT_VIBRATION);
 
 		canvas.displayShortToastMessage("Panning");
 		endDragModesAndScrolling();
