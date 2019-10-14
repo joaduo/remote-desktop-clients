@@ -21,6 +21,7 @@
 
 package com.iiordanov.bVNC.input;
 
+import android.os.SystemClock;
 import android.os.Vibrator;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -61,6 +62,31 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		canvas.displayShortToastMessage("Panning");
 		endDragModesAndScrolling();
 		panMode = true;
+	}
+
+	@Override
+	public boolean onSingleTapConfirmed(MotionEvent e) {
+		int metaState   = e.getMetaState();
+		activity.showToolbar();
+		pointer.leftButtonDown(getX(e), getY(e), metaState);
+		SystemClock.sleep(50);
+		pointer.releaseButton(getX(e), getY(e), metaState);
+		canvas.movePanToMakePointerVisible();
+		return true;
+	}
+
+	@Override
+	public boolean onDoubleTap (MotionEvent e) {
+		int metaState   = e.getMetaState();
+		pointer.leftButtonDown(getX(e), getY(e), metaState);
+		SystemClock.sleep(50);
+		pointer.releaseButton(getX(e), getY(e), metaState);
+		SystemClock.sleep(50);
+		pointer.leftButtonDown(getX(e), getY(e), metaState);
+		SystemClock.sleep(50);
+		pointer.releaseButton(getX(e), getY(e), metaState);
+		canvas.movePanToMakePointerVisible();
+		return true;
 	}
 
 	@Override
