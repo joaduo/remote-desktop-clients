@@ -100,5 +100,105 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		canvas.movePanToMakePointerVisible();
 		return true;
 	}
+
+	@Override
+	public boolean onScale(ScaleGestureDetector detector) {
+		//android.util.Log.i(TAG, "onScale called");
+		boolean eventConsumed = true;
+
+		// Get the current focus.
+		xCurrentFocus = detector.getFocusX();
+		yCurrentFocus = detector.getFocusY();
+
+		// If we haven't started scaling yet, we check whether a swipe is being performed.
+		// The arbitrary fudge factor may not be the best way to set a tolerance...
+		if (!inScaling) {
+			// Start swiping mode only after we've moved away from the initial focal point some distance.
+			if (!inSwiping) {
+				if ( (yCurrentFocus < (yInitialFocus - startSwipeDist)) ||
+						(yCurrentFocus > (yInitialFocus + startSwipeDist)) ||
+						(xCurrentFocus < (xInitialFocus - startSwipeDist)) ||
+						(xCurrentFocus > (xInitialFocus + startSwipeDist)) ) {
+					inSwiping      = true;
+					xPreviousFocus = xCurrentFocus;
+					yPreviousFocus = yCurrentFocus;
+				}
+			}
+
+			// If in swiping mode, indicate a swipe at regular intervals.
+			if (inSwiping) {
+				scrollDown  = false;
+				scrollUp    = false;
+				scrollRight = false;
+				scrollLeft  = false;
+				if        (yCurrentFocus < (yPreviousFocus - baseSwipeDist)) {
+					scrollDown     = true;
+					xPreviousFocus = xCurrentFocus;
+					yPreviousFocus = yCurrentFocus;
+				} else if (yCurrentFocus > (yPreviousFocus + baseSwipeDist)) {
+					scrollUp       = true;
+					xPreviousFocus = xCurrentFocus;
+					yPreviousFocus = yCurrentFocus;
+				} else if (xCurrentFocus < (xPreviousFocus - baseSwipeDist)) {
+					scrollRight    = true;
+					xPreviousFocus = xCurrentFocus;
+					yPreviousFocus = yCurrentFocus;
+				} else if (xCurrentFocus > (xPreviousFocus + baseSwipeDist)) {
+					scrollLeft     = true;
+					xPreviousFocus = xCurrentFocus;
+					yPreviousFocus = yCurrentFocus;
+				} else {
+					eventConsumed  = false;
+				}
+				// The faster we swipe, the faster we traverse the screen, and hence, the
+				// smaller the time-delta between consumed events. We take the reciprocal
+				// obtain swipeSpeed. If it goes to zero, we set it to at least one.
+				long elapsedTime = detector.getTimeDelta();
+				if (elapsedTime < 10) elapsedTime = 10;
+
+				swipeSpeed = baseSwipeTime/elapsedTime;
+				if (swipeSpeed == 0)  swipeSpeed = 1;
+				//if (consumed)        Log.d(TAG,"Current swipe speed: " + swipeSpeed);
+			}
+		}
+
+		if (!inSwiping) {
+			if ( !inScaling && Math.abs(1.0 - detector.getScaleFactor()) < minScaleFactor ) {
+				//android.util.Log.i(TAG,"Not scaling due to small scale factor.");
+				eventConsumed = false;
+			}
+
+			if (eventConsumed && canvas != null && canvas.canvasZoomer != null) {
+				if (inScaling == false) {
+					inScaling = true;
+				}
+				//android.util.Log.i(TAG, "Changing zoom level: " + detector.getScaleFactor());
+				canvas.canvasZoomer.changeZoom(activity, detector.getScaleFactor(), xCurrentFocus, yCurrentFocus);
+			}
+		}
+		return eventConsumed;
+	}
+
+	@Override
+	public boolean onScaleBegin(ScaleGestureDetector detector) {
+		//android.util.Log.i(TAG, "onScaleBegin ("+xInitialFocus+","+yInitialFocus+")");
+		inScaling           = false;
+		scalingJustFinished = false;
+		// Cancel any swipes that may have been registered last time.
+		inSwiping   = false;
+		scrollDown  = false;
+		scrollUp    = false;
+		scrollRight = false;
+		scrollLeft  = false;
+		return true;
+	}
+
+	@Override
+	public void onScaleEnd(ScaleGestureDetector detector) {
+		//android.util.Log.d(TAG, "onScaleEnd");
+		inScaling = false;
+		inSwiping = false;
+		scalingJustFinished = true;
+	}
 }
 
