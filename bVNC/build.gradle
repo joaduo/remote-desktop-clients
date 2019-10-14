@@ -5,7 +5,7 @@ android {
 
     defaultConfig {
         targetSdkVersion 27
-        minSdkVersion project.getProperties().get("SDK_VERSION")
+        minSdkVersion 14//project.getProperties().get("SDK_VERSION")
     }
 
     buildTypes {
