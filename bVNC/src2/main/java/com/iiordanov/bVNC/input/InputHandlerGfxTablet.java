@@ -49,6 +49,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		return ID;
 	}
 
+	@Override
 	protected boolean handleMouseActions (MotionEvent e) {
 		boolean used     = false;
 		final int action = e.getActionMasked();
@@ -64,18 +65,18 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			case MotionEvent.ACTION_MOVE:
 				switch (bstate) {
 					case MotionEvent.BUTTON_PRIMARY:
-						canvas.movePanToMakePointerVisible();
-						pointer.leftButtonDown(x, y, meta);
+						//canvas.movePanToMakePointerVisible();
+						//pointer.leftButtonDown(x, y, meta);
 						used = true;
 						break;
 					case MotionEvent.BUTTON_SECONDARY:
-						canvas.movePanToMakePointerVisible();
-						pointer.rightButtonDown(x, y, meta);
+						//canvas.movePanToMakePointerVisible();
+						//pointer.rightButtonDown(x, y, meta);
 						used = true;
 						break;
 					case MotionEvent.BUTTON_TERTIARY:
-						canvas.movePanToMakePointerVisible();
-						pointer.middleButtonDown(x, y, meta);
+						//canvas.movePanToMakePointerVisible();
+						//pointer.middleButtonDown(x, y, meta);
 						used = true;
 						break;
 				}
@@ -90,8 +91,8 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 					case MotionEvent.BUTTON_PRIMARY:
 					case MotionEvent.BUTTON_SECONDARY:
 					case MotionEvent.BUTTON_TERTIARY:
-						canvas.movePanToMakePointerVisible();
-						pointer.releaseButton(x, y, meta);
+						//canvas.movePanToMakePointerVisible();
+						//pointer.releaseButton(x, y, meta);
 						used = true;
 						break;
 				}
@@ -126,19 +127,19 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			// If the mouse was moved OR as reported, some external mice trigger this when a
 			// mouse button is pressed as well, so we check bstate here too.
 			case MotionEvent.ACTION_HOVER_MOVE:
-				canvas.movePanToMakePointerVisible();
+				//canvas.movePanToMakePointerVisible();
 				switch (bstate) {
 					case MotionEvent.BUTTON_PRIMARY:
-						pointer.leftButtonDown(x, y, meta);
+						//pointer.leftButtonDown(x, y, meta);
 						break;
 					case MotionEvent.BUTTON_SECONDARY:
-						pointer.rightButtonDown(x, y, meta);
+						//pointer.rightButtonDown(x, y, meta);
 						break;
 					case MotionEvent.BUTTON_TERTIARY:
-						pointer.middleButtonDown(x, y, meta);
+						//pointer.middleButtonDown(x, y, meta);
 						break;
 					default:
-						pointer.moveMouseButtonUp(x, y, meta);
+						//pointer.moveMouseButtonUp(x, y, meta);
 						break;
 				}
 				used = true;
@@ -213,7 +214,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 
 						// If any drag modes were going on, end them and send a mouse up event.
 						if (endDragModesAndScrolling()) {
-							pointer.releaseButton(getX(e), getY(e), meta);
+							//pointer.releaseButton(getX(e), getY(e), meta);
 							return true;
 						}
 						break;
@@ -226,15 +227,15 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 							dragY = e.getY();
 							return true;
 						} else if (dragMode || rightDragMode || middleDragMode) {
-							canvas.movePanToMakePointerVisible();
-							pointer.moveMouseButtonDown(getX(e), getY(e), meta);
+							//canvas.movePanToMakePointerVisible();
+							//pointer.moveMouseButtonDown(getX(e), getY(e), meta);
 							return true;
 						} else if (inSwiping) {
 							// Save the coordinates and restore them afterward.
 							float x = e.getX();
 							float y = e.getY();
 							// Set the coordinates to where the swipe began (i.e. where scaling started).
-							setEventCoordinates(e, xInitialFocus, yInitialFocus);
+							//setEventCoordinates(e, xInitialFocus, yInitialFocus);
 							sendScrollEvents (getX(e), getY(e), meta);
 							// Restore the coordinates so that onScale doesn't get all muddled up.
 							setEventCoordinates(e, x, y);
@@ -266,7 +267,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 							// finger is down, we treat it as a middle mouse click. We ignore the lifting of the
 							// second index when the third index has gone down (using the thirdPointerWasDown variable)
 							// to prevent inadvertent right-clicks when a middle click has been performed.
-							pointer.rightButtonDown(getX(e), getY(e), meta);
+							//pointer.rightButtonDown(getX(e), getY(e), meta);
 							// Enter right-drag mode.
 							rightDragMode = true;
 							// Now the event must be passed on to the parent class in order to
@@ -282,7 +283,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 						if (!inScaling) {
 							// This boolean prevents the right-click from firing simultaneously as a middle button click.
 							thirdPointerWasDown = true;
-							pointer.middleButtonDown(getX(e), getY(e), meta);
+							//pointer.middleButtonDown(getX(e), getY(e), meta);
 							// Enter middle-drag mode.
 							middleDragMode      = true;
 						}
@@ -294,25 +295,8 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		return gestureDetector.onTouchEvent(e);
 	}
 
-	protected void sendScrollEvents (int x, int y, int meta) {
-		int numEvents = 0;
-		while (numEvents < swipeSpeed && numEvents < maxSwipeSpeed) {
-			if         (scrollDown) {
-				pointer.scrollDown(x, y, meta);
-				pointer.moveMouseButtonUp(x, y, meta);
-			} else if (scrollUp) {
-				pointer.scrollUp(x, y, meta);
-				pointer.moveMouseButtonUp(x, y, meta);
-			} else if (scrollRight) {
-				pointer.scrollRight(x, y, meta);
-				pointer.moveMouseButtonUp(x, y, meta);
-			} else if (scrollLeft) {
-				pointer.scrollLeft(x, y, meta);
-				pointer.moveMouseButtonUp(x, y, meta);
-			}
-			numEvents++;
-		}
-		pointer.releaseButton(x, y, meta);
+	@Override
+	protected void sendScrollEvents(int x, int y, int meta) {
 	}
 
 	@Override
@@ -333,24 +317,24 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 	public boolean onSingleTapConfirmed(MotionEvent e) {
 		int metaState   = e.getMetaState();
 		activity.showToolbar();
-		pointer.leftButtonDown(getX(e), getY(e), metaState);
-		SystemClock.sleep(50);
-		pointer.releaseButton(getX(e), getY(e), metaState);
-		canvas.movePanToMakePointerVisible();
+		//pointer.leftButtonDown(getX(e), getY(e), metaState);
+		//SystemClock.sleep(50);
+		//pointer.releaseButton(getX(e), getY(e), metaState);
+		//canvas.movePanToMakePointerVisible();
 		return true;
 	}
 
 	@Override
 	public boolean onDoubleTap (MotionEvent e) {
 		int metaState   = e.getMetaState();
-		pointer.leftButtonDown(getX(e), getY(e), metaState);
-		SystemClock.sleep(50);
-		pointer.releaseButton(getX(e), getY(e), metaState);
-		SystemClock.sleep(50);
-		pointer.leftButtonDown(getX(e), getY(e), metaState);
-		SystemClock.sleep(50);
-		pointer.releaseButton(getX(e), getY(e), metaState);
-		canvas.movePanToMakePointerVisible();
+//		pointer.leftButtonDown(getX(e), getY(e), metaState);
+//		SystemClock.sleep(50);
+//		pointer.releaseButton(getX(e), getY(e), metaState);
+//		SystemClock.sleep(50);
+//		pointer.leftButtonDown(getX(e), getY(e), metaState);
+//		SystemClock.sleep(50);
+//		pointer.releaseButton(getX(e), getY(e), metaState);
+		//canvas.movePanToMakePointerVisible();
 		return true;
 	}
 
@@ -383,12 +367,12 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 
 			if (!dragMode) {
 				dragMode = true;
-				p.leftButtonDown(getX(e1), getY(e1), e1.getMetaState());
+				//p.leftButtonDown(getX(e1), getY(e1), e1.getMetaState());
 			} else {
-				p.moveMouseButtonDown(getX(e2), getY(e2), e2.getMetaState());
+				//p.moveMouseButtonDown(getX(e2), getY(e2), e2.getMetaState());
 			}
 		}
-		canvas.movePanToMakePointerVisible();
+		//canvas.movePanToMakePointerVisible();
 		return true;
 	}
 
@@ -401,57 +385,57 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		xCurrentFocus = detector.getFocusX();
 		yCurrentFocus = detector.getFocusY();
 
-		// If we haven't started scaling yet, we check whether a swipe is being performed.
-		// The arbitrary fudge factor may not be the best way to set a tolerance...
-		if (!inScaling) {
-			// Start swiping mode only after we've moved away from the initial focal point some distance.
-			if (!inSwiping) {
-				if ( (yCurrentFocus < (yInitialFocus - startSwipeDist)) ||
-						(yCurrentFocus > (yInitialFocus + startSwipeDist)) ||
-						(xCurrentFocus < (xInitialFocus - startSwipeDist)) ||
-						(xCurrentFocus > (xInitialFocus + startSwipeDist)) ) {
-					inSwiping      = true;
-					xPreviousFocus = xCurrentFocus;
-					yPreviousFocus = yCurrentFocus;
-				}
-			}
-
-			// If in swiping mode, indicate a swipe at regular intervals.
-			if (inSwiping) {
-				scrollDown  = false;
-				scrollUp    = false;
-				scrollRight = false;
-				scrollLeft  = false;
-				if        (yCurrentFocus < (yPreviousFocus - baseSwipeDist)) {
-					scrollDown     = true;
-					xPreviousFocus = xCurrentFocus;
-					yPreviousFocus = yCurrentFocus;
-				} else if (yCurrentFocus > (yPreviousFocus + baseSwipeDist)) {
-					scrollUp       = true;
-					xPreviousFocus = xCurrentFocus;
-					yPreviousFocus = yCurrentFocus;
-				} else if (xCurrentFocus < (xPreviousFocus - baseSwipeDist)) {
-					scrollRight    = true;
-					xPreviousFocus = xCurrentFocus;
-					yPreviousFocus = yCurrentFocus;
-				} else if (xCurrentFocus > (xPreviousFocus + baseSwipeDist)) {
-					scrollLeft     = true;
-					xPreviousFocus = xCurrentFocus;
-					yPreviousFocus = yCurrentFocus;
-				} else {
-					eventConsumed  = false;
-				}
-				// The faster we swipe, the faster we traverse the screen, and hence, the
-				// smaller the time-delta between consumed events. We take the reciprocal
-				// obtain swipeSpeed. If it goes to zero, we set it to at least one.
-				long elapsedTime = detector.getTimeDelta();
-				if (elapsedTime < 10) elapsedTime = 10;
-
-				swipeSpeed = baseSwipeTime/elapsedTime;
-				if (swipeSpeed == 0)  swipeSpeed = 1;
-				//if (consumed)        Log.d(TAG,"Current swipe speed: " + swipeSpeed);
-			}
-		}
+//		// If we haven't started scaling yet, we check whether a swipe is being performed.
+//		// The arbitrary fudge factor may not be the best way to set a tolerance...
+//		if (!inScaling) {
+//			// Start swiping mode only after we've moved away from the initial focal point some distance.
+//			if (!inSwiping) {
+//				if ( (yCurrentFocus < (yInitialFocus - startSwipeDist)) ||
+//						(yCurrentFocus > (yInitialFocus + startSwipeDist)) ||
+//						(xCurrentFocus < (xInitialFocus - startSwipeDist)) ||
+//						(xCurrentFocus > (xInitialFocus + startSwipeDist)) ) {
+//					inSwiping      = true;
+//					xPreviousFocus = xCurrentFocus;
+//					yPreviousFocus = yCurrentFocus;
+//				}
+//			}
+//
+//			// If in swiping mode, indicate a swipe at regular intervals.
+//			if (inSwiping) {
+//				scrollDown  = false;
+//				scrollUp    = false;
+//				scrollRight = false;
+//				scrollLeft  = false;
+//				if        (yCurrentFocus < (yPreviousFocus - baseSwipeDist)) {
+//					scrollDown     = true;
+//					xPreviousFocus = xCurrentFocus;
+//					yPreviousFocus = yCurrentFocus;
+//				} else if (yCurrentFocus > (yPreviousFocus + baseSwipeDist)) {
+//					scrollUp       = true;
+//					xPreviousFocus = xCurrentFocus;
+//					yPreviousFocus = yCurrentFocus;
+//				} else if (xCurrentFocus < (xPreviousFocus - baseSwipeDist)) {
+//					scrollRight    = true;
+//					xPreviousFocus = xCurrentFocus;
+//					yPreviousFocus = yCurrentFocus;
+//				} else if (xCurrentFocus > (xPreviousFocus + baseSwipeDist)) {
+//					scrollLeft     = true;
+//					xPreviousFocus = xCurrentFocus;
+//					yPreviousFocus = yCurrentFocus;
+//				} else {
+//					eventConsumed  = false;
+//				}
+//				// The faster we swipe, the faster we traverse the screen, and hence, the
+//				// smaller the time-delta between consumed events. We take the reciprocal
+//				// obtain swipeSpeed. If it goes to zero, we set it to at least one.
+//				long elapsedTime = detector.getTimeDelta();
+//				if (elapsedTime < 10) elapsedTime = 10;
+//
+//				swipeSpeed = baseSwipeTime/elapsedTime;
+//				if (swipeSpeed == 0)  swipeSpeed = 1;
+//				//if (consumed)        Log.d(TAG,"Current swipe speed: " + swipeSpeed);
+//			}
+//		}
 
 		if (!inSwiping) {
 			if ( !inScaling && Math.abs(1.0 - detector.getScaleFactor()) < minScaleFactor ) {
