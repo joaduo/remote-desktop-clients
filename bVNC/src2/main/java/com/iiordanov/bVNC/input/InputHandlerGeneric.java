@@ -282,7 +282,7 @@ abstract class InputHandlerGeneric extends GestureDetector.SimpleOnGestureListen
 	 * @param y
 	 * @param meta
 	 */
-	private void sendScrollEvents (int x, int y, int meta) {
+	protected void sendScrollEvents (int x, int y, int meta) {
     	int numEvents = 0;
     	while (numEvents < swipeSpeed && numEvents < maxSwipeSpeed) {
     		if         (scrollDown) {
@@ -378,11 +378,11 @@ abstract class InputHandlerGeneric extends GestureDetector.SimpleOnGestureListen
 	 * @param x new x coordinate.
 	 * @param y new y coordinate.
 	 */
-	private void setEventCoordinates(MotionEvent e, float x, float y) {
+	protected void setEventCoordinates(MotionEvent e, float x, float y) {
 		e.setLocation(x, y);
 	}
     
-    private void detectImmersiveSwipe (float y) {
+    protected void detectImmersiveSwipe (float y) {
         //android.util.Log.d(TAG, "detectImmersiveSwipe");
         if (Constants.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT &&
             (y <= immersiveSwipeDistance || canvas.getHeight() - y <= immersiveSwipeDistance)) {
