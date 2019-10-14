@@ -294,6 +294,27 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		return gestureDetector.onTouchEvent(e);
 	}
 
+	protected void sendScrollEvents (int x, int y, int meta) {
+		int numEvents = 0;
+		while (numEvents < swipeSpeed && numEvents < maxSwipeSpeed) {
+			if         (scrollDown) {
+				pointer.scrollDown(x, y, meta);
+				pointer.moveMouseButtonUp(x, y, meta);
+			} else if (scrollUp) {
+				pointer.scrollUp(x, y, meta);
+				pointer.moveMouseButtonUp(x, y, meta);
+			} else if (scrollRight) {
+				pointer.scrollRight(x, y, meta);
+				pointer.moveMouseButtonUp(x, y, meta);
+			} else if (scrollLeft) {
+				pointer.scrollLeft(x, y, meta);
+				pointer.moveMouseButtonUp(x, y, meta);
+			}
+			numEvents++;
+		}
+		pointer.releaseButton(x, y, meta);
+	}
+
 	@Override
 	public void onLongPress(MotionEvent e) {
 
