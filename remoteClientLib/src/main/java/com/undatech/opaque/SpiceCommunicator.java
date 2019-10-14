@@ -41,7 +41,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.freedesktop.gstreamer.GStreamer;
+//import org.freedesktop.gstreamer.GStreamer;
 
 import com.undatech.opaque.input.RemoteKeyboard;
 import com.undatech.opaque.input.RemotePointer;
@@ -128,12 +128,12 @@ public class SpiceCommunicator implements RfbConnectable {
         myself = this;
         mUsbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
 
-        try {
-            GStreamer.init(context);
-        } catch (Exception e) {
-            e.printStackTrace();
-            MessageDialogs.displayToast(context, handler, e.getMessage(), Toast.LENGTH_SHORT);
-        }
+//        try {
+//            GStreamer.init(context);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            MessageDialogs.displayToast(context, handler, e.getMessage(), Toast.LENGTH_SHORT);
+//        }
     }
     
     private static SpiceCommunicator myself = null;
