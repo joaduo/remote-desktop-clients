@@ -145,8 +145,8 @@ class ZoomScaling extends AbstractScaling {
             }
         }
         else {
-            if (newScale > 4) {
-                newScale = 4;
+            if (newScale > 10) {
+                newScale = 10;
             }
         }
         
