@@ -24,6 +24,7 @@ package com.iiordanov.bVNC.input;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -73,113 +74,19 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		return ID;
 	}
 
-	short normalizePressure(float x) {
-		return (short)(Math.min(Math.max(0, x), 2.0) * Short.MAX_VALUE);
+	private enum InRangeStatus {
+		OutOfRange,
+		InRange,
+		FakeInRange
+	}
+	InRangeStatus inRangeStatus;
+
+	short normalize(float x, int max) {
+		return (short)(Math.min(Math.max(0, x), max) * 2 * Short.MAX_VALUE/max);
 	}
 
-	@Override
-	protected boolean handleMouseActions (MotionEvent e) {
-		boolean used     = false;
-		final int action = e.getActionMasked();
-		final int meta   = e.getMetaState();
-		final int bstate = e.getButtonState();
-		float scale      = canvas.getZoomFactor();
-		int x = (int)(canvas.getAbsX() +  e.getX()                          / scale);
-		int y = (int)(canvas.getAbsY() + (e.getY() - 1.f * canvas.getTop()) / scale);
-		short pressure = normalizePressure(e.getPressure(e.getActionIndex()) + e.getSize(e.getActionIndex()));
-
-		switch (action) {
-			// If a mouse button was pressed or mouse was moved.
-			case MotionEvent.ACTION_DOWN:
-			case MotionEvent.ACTION_MOVE:
-				switch (bstate) {
-					case MotionEvent.BUTTON_PRIMARY:
-						//canvas.movePanToMakePointerVisible();
-						//GFX
-						//pointer.leftButtonDown(x, y, meta);
-						used = true;
-						break;
-					case MotionEvent.BUTTON_SECONDARY:
-						//canvas.movePanToMakePointerVisible();
-						//pointer.rightButtonDown(x, y, meta);
-						used = true;
-						break;
-					case MotionEvent.BUTTON_TERTIARY:
-						//canvas.movePanToMakePointerVisible();
-						//pointer.middleButtonDown(x, y, meta);
-						used = true;
-						break;
-				}
-				break;
-			// If a mouse button was released.
-			case MotionEvent.ACTION_UP:
-				switch (bstate) {
-					case 0:
-						if (e.getToolType(0) != MotionEvent.TOOL_TYPE_MOUSE) {
-							break;
-						}
-					case MotionEvent.BUTTON_PRIMARY:
-					case MotionEvent.BUTTON_SECONDARY:
-					case MotionEvent.BUTTON_TERTIARY:
-						//canvas.movePanToMakePointerVisible();
-						//GFX
-						//pointer.releaseButton(x, y, meta);
-						used = true;
-						break;
-				}
-				break;
-			// If the mouse wheel was scrolled.
-			case MotionEvent.ACTION_SCROLL:
-				float vscroll = e.getAxisValue(MotionEvent.AXIS_VSCROLL);
-				float hscroll = e.getAxisValue(MotionEvent.AXIS_HSCROLL);
-				scrollDown  = false;
-				scrollUp    = false;
-				scrollRight = false;
-				scrollLeft  = false;
-				// Determine direction and speed of scrolling.
-				if (vscroll < 0) {
-					swipeSpeed = (int)(-1*vscroll);
-					scrollDown = true;
-				} else if (vscroll > 0) {
-					swipeSpeed = (int)vscroll;
-					scrollUp   = true;
-				} else if (hscroll < 0) {
-					swipeSpeed = (int)(-1*hscroll);
-					scrollRight = true;
-				} else if (hscroll > 0) {
-					swipeSpeed = (int)hscroll;
-					scrollLeft  = true;
-				} else
-					break;
-
-				sendScrollEvents (x, y, meta);
-				used = true;
-				break;
-			// If the mouse was moved OR as reported, some external mice trigger this when a
-			// mouse button is pressed as well, so we check bstate here too.
-			case MotionEvent.ACTION_HOVER_MOVE:
-				//canvas.movePanToMakePointerVisible();
-				switch (bstate) {
-					case MotionEvent.BUTTON_PRIMARY:
-						//pointer.leftButtonDown(x, y, meta);
-						break;
-					case MotionEvent.BUTTON_SECONDARY:
-						//pointer.rightButtonDown(x, y, meta);
-						break;
-					case MotionEvent.BUTTON_TERTIARY:
-						//pointer.middleButtonDown(x, y, meta);
-						break;
-					default:
-						//GFX
-						netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, (short)x, (short)y, pressure));
-						//pointer.moveMouseButtonUp(x, y, meta);
-						break;
-				}
-				used = true;
-		}
-
-		prevMouseOrStylusAction = action;
-		return used;
+	short normalizePressure(float x) {
+		return (short)(Math.min(Math.max(0, x), 2.0) * Short.MAX_VALUE);
 	}
 
 	@Override
@@ -189,144 +96,56 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		final int pointerID  = e.getPointerId(index);
 		final int meta       = e.getMetaState();
 
-		float f = e.getPressure();
-		if (f > 2.f)
-			f = f / 50.f;
-		if (f > .92f) {
-			disregardNextOnFling = true;
-		}
+		//float f = e.getPressure();
 
-		if (android.os.Build.VERSION.SDK_INT >= 14) {
-			// Handle and consume actions performed by a (e.g. USB or bluetooth) mouse.
-			if (handleMouseActions (e))
-				return true;
-		}
 
-		if (action == MotionEvent.ACTION_UP) {
-			// Turn filtering back on and invalidate to make things pretty.
-			canvas.myDrawable.paint.setFilterBitmap(true);
-			canvas.invalidate();
-		}
+		float scale      = canvas.getZoomFactor();
+//		int x = (int)(canvas.getAbsX() +  e.getX()                          / scale);
+//		int y = (int)(canvas.getAbsY() + (e.getY() - 1.f * canvas.getTop()) / scale);
 
-		switch (pointerID) {
+		float fx = canvas.getAbsX() +  e.getX()                          / scale;
+		float fy = canvas.getAbsY() + (e.getY() - 1.f * canvas.getTop()) / scale;
+		short x = normalize(fx, canvas.getImageWidth());
+		short y = normalize(fy, canvas.getImageHeight());
 
-			case 0:
-				switch (action) {
+		for (int ptr = 0; ptr < e.getPointerCount(); ptr++)
+			//if (!acceptStylusOnly || (event.getToolType(ptr) == MotionEvent.TOOL_TYPE_STYLUS)) {
+			if (true) {
+				short pressure = normalizePressure(e.getPressure(ptr) + e.getSize(ptr));
+				switch (e.getActionMasked()) {
+					case MotionEvent.ACTION_MOVE:
+						netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, x, y, pressure));
+						break;
 					case MotionEvent.ACTION_DOWN:
-						disregardNextOnFling = false;
-						singleHandedJustEnded = false;
-						// We have put down first pointer on the screen, so we can reset the state of all click-state variables.
-						// Permit sending mouse-down event on long-tap again.
-						secondPointerWasDown = false;
-						// Permit right-clicking again.
-						thirdPointerWasDown = false;
-						// Cancel any effect of scaling having "just finished" (e.g. ignoring scrolling).
-						scalingJustFinished = false;
-						// Cancel drag modes and scrolling.
-						if (!singleHandedGesture)
-							endDragModesAndScrolling();
-						canvas.cursorBeingMoved = true;
-						// If we are manipulating the desktop, turn off bitmap filtering for faster response.
-						canvas.myDrawable.paint.setFilterBitmap(false);
-						// Indicate where we start dragging from.
-						dragX = e.getX();
-						dragY = e.getY();
-
-						// Detect whether this is potentially the start of a gesture to show the nav bar.
-						detectImmersiveSwipe(dragY);
+						if (inRangeStatus == inRangeStatus.OutOfRange) {
+							inRangeStatus = inRangeStatus.FakeInRange;
+							netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, x, y, (short)0, -1, true));
+						}
+						netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, x, y, pressure, 0, true));
 						break;
 					case MotionEvent.ACTION_UP:
-						singleHandedGesture = false;
-						singleHandedJustEnded = true;
-
-						// If this is the end of a swipe that showed the nav bar, consume.
-						if (immersiveSwipe && Math.abs(dragY - e.getY()) > immersiveSwipeDistance) {
-							endDragModesAndScrolling();
-							return true;
-						}
-
-						// If any drag modes were going on, end them and send a mouse up event.
-						if (endDragModesAndScrolling()) {
-							//pointer.releaseButton(getX(e), getY(e), meta);
-							return true;
+					case MotionEvent.ACTION_CANCEL:
+						netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, x, y, pressure, 0, false));
+						if (inRangeStatus == inRangeStatus.FakeInRange) {
+							inRangeStatus = inRangeStatus.OutOfRange;
+							netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, x, y, (short)0, -1, false));
 						}
 						break;
-					case MotionEvent.ACTION_MOVE:
-						// Send scroll up/down events if swiping is happening.
-						if (panMode) {
-							float scale = canvas.getZoomFactor();
-							canvas.relativePan(-(int)((e.getX() - dragX)*scale), -(int)((e.getY() - dragY)*scale));
-							dragX = e.getX();
-							dragY = e.getY();
-							return true;
-						} else if (dragMode || rightDragMode || middleDragMode) {
-							//canvas.movePanToMakePointerVisible();
-							//GFX
-							//pointer.moveMouseButtonDown(getX(e), getY(e), meta);
-							return true;
-						} else if (inSwiping) {
-							// Save the coordinates and restore them afterward.
-							float x = e.getX();
-							float y = e.getY();
-							// Set the coordinates to where the swipe began (i.e. where scaling started).
-							//setEventCoordinates(e, xInitialFocus, yInitialFocus);
-							sendScrollEvents (getX(e), getY(e), meta);
-							// Restore the coordinates so that onScale doesn't get all muddled up.
-							setEventCoordinates(e, x, y);
-						} else if (immersiveSwipe) {
-							// If this is part of swipe that shows the nav bar, consume.
-							return true;
-						}
-				}
-				break;
-
-			case 1:
-				switch (action) {
-					case MotionEvent.ACTION_POINTER_DOWN:
-						// We re-calculate the initial focal point to be between the 1st and 2nd pointer index.
-						xInitialFocus = 0.5f * (dragX + e.getX(pointerID));
-						yInitialFocus = 0.5f * (dragY + e.getY(pointerID));
-						// Here we only prepare for the second click, which we perform on ACTION_POINTER_UP for pointerID==1.
-						endDragModesAndScrolling();
-						// Permit sending mouse-down event on long-tap again.
-						secondPointerWasDown = true;
-						// Permit right-clicking again.
-						thirdPointerWasDown  = false;
+					case MotionEvent.ACTION_HOVER_MOVE:
+						netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, x, y, pressure));
+						activity.showToolbar();
 						break;
-					case MotionEvent.ACTION_POINTER_UP:
-						if (!inSwiping && !inScaling && !thirdPointerWasDown) {
-							// If user taps with a second finger while first finger is down, then we treat this as
-							// a right mouse click, but we only effect the click when the second pointer goes up.
-							// If the user taps with a second and third finger while the first
-							// finger is down, we treat it as a middle mouse click. We ignore the lifting of the
-							// second index when the third index has gone down (using the thirdPointerWasDown variable)
-							// to prevent inadvertent right-clicks when a middle click has been performed.
-							//pointer.rightButtonDown(getX(e), getY(e), meta);
-							// Enter right-drag mode.
-							rightDragMode = true;
-							// Now the event must be passed on to the parent class in order to
-							// end scaling as it was certainly started when the second pointer went down.
-						}
+					case MotionEvent.ACTION_HOVER_EXIT:
+						inRangeStatus = InRangeStatus.OutOfRange;
+						netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, x, y, pressure, -1, false));
 						break;
 				}
-				break;
 
-			case 2:
-				switch (action) {
-					case MotionEvent.ACTION_POINTER_DOWN:
-						if (!inScaling) {
-							// This boolean prevents the right-click from firing simultaneously as a middle button click.
-							thirdPointerWasDown = true;
-							//pointer.middleButtonDown(getX(e), getY(e), meta);
-							// Enter middle-drag mode.
-							middleDragMode      = true;
-						}
-				}
-				break;
-		}
-
-		scalingGestureDetector.onTouchEvent(e);
-		return gestureDetector.onTouchEvent(e);
+			}
+		return true;
+		//return false;
+		//scalingGestureDetector.onTouchEvent(e);
+		//return false;
 	}
 
 	@Override

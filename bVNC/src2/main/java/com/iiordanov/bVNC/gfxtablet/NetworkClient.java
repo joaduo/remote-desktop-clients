@@ -30,7 +30,7 @@ public class NetworkClient implements Runnable {
 	public boolean reconfigureNetworking() {
 		try {
 			//String hostName = preferences.getString(SettingsActivity.KEY_PREF_HOST, "unknown.invalid");
-			String hostName = "192.168.200.119";
+			String hostName = "192.168.200.104";
 			destAddress = InetAddress.getByName(hostName);
 		} catch (UnknownHostException e) {
 			destAddress = null;
