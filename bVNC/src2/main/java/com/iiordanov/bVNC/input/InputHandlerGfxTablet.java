@@ -23,20 +23,44 @@ package com.iiordanov.bVNC.input;
 
 import android.os.SystemClock;
 import android.os.Vibrator;
+import android.os.AsyncTask;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.view.View;
+import android.widget.Toast;
 
 import com.iiordanov.bVNC.R;
 import com.iiordanov.bVNC.RemoteCanvas;
 import com.iiordanov.bVNC.RemoteCanvasActivity;
+import com.iiordanov.bVNC.gfxtablet.NetEvent;
+import com.iiordanov.bVNC.gfxtablet.NetEvent.Type;
+import com.iiordanov.bVNC.gfxtablet.NetworkClient;
 
 public class InputHandlerGfxTablet extends InputHandlerGeneric {
 	static final String TAG = "InputHandlerGfxTablet";
 	public static final String ID = "GFX_TABLET_MODE";
 
+	NetworkClient netClient;
+
 	public InputHandlerGfxTablet(RemoteCanvasActivity activity, RemoteCanvas canvas,
                                  RemotePointer pointer, Vibrator myVibrator) {
 		super(activity, canvas, pointer, myVibrator);
+
+		// create network client in a separate thread
+		netClient = new NetworkClient();
+		new Thread(netClient).start();
+		new ConfigureNetworkingTask().execute(); //async resolve hostname
+	}
+
+	private class ConfigureNetworkingTask extends AsyncTask<Void, Void, Boolean> {
+		@Override
+		protected Boolean doInBackground(Void... params) {
+			return netClient.reconfigureNetworking();
+		}
+
+		protected void onPostExecute(Boolean success) {
+
+		}
 	}
 
 	@Override
@@ -49,6 +73,10 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		return ID;
 	}
 
+	short normalizePressure(float x) {
+		return (short)(Math.min(Math.max(0, x), 2.0) * Short.MAX_VALUE);
+	}
+
 	@Override
 	protected boolean handleMouseActions (MotionEvent e) {
 		boolean used     = false;
@@ -58,6 +86,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		float scale      = canvas.getZoomFactor();
 		int x = (int)(canvas.getAbsX() +  e.getX()                          / scale);
 		int y = (int)(canvas.getAbsY() + (e.getY() - 1.f * canvas.getTop()) / scale);
+		short pressure = normalizePressure(e.getPressure(e.getActionIndex()) + e.getSize(e.getActionIndex()));
 
 		switch (action) {
 			// If a mouse button was pressed or mouse was moved.
@@ -66,6 +95,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 				switch (bstate) {
 					case MotionEvent.BUTTON_PRIMARY:
 						//canvas.movePanToMakePointerVisible();
+						//GFX
 						//pointer.leftButtonDown(x, y, meta);
 						used = true;
 						break;
@@ -92,6 +122,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 					case MotionEvent.BUTTON_SECONDARY:
 					case MotionEvent.BUTTON_TERTIARY:
 						//canvas.movePanToMakePointerVisible();
+						//GFX
 						//pointer.releaseButton(x, y, meta);
 						used = true;
 						break;
@@ -139,6 +170,8 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 						//pointer.middleButtonDown(x, y, meta);
 						break;
 					default:
+						//GFX
+						netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, (short)x, (short)y, pressure));
 						//pointer.moveMouseButtonUp(x, y, meta);
 						break;
 				}
@@ -228,6 +261,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 							return true;
 						} else if (dragMode || rightDragMode || middleDragMode) {
 							//canvas.movePanToMakePointerVisible();
+							//GFX
 							//pointer.moveMouseButtonDown(getX(e), getY(e), meta);
 							return true;
 						} else if (inSwiping) {
@@ -367,8 +401,10 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 
 			if (!dragMode) {
 				dragMode = true;
+				//GFX
 				//p.leftButtonDown(getX(e1), getY(e1), e1.getMetaState());
 			} else {
+				//GFX
 				//p.moveMouseButtonDown(getX(e2), getY(e2), e2.getMetaState());
 			}
 		}
