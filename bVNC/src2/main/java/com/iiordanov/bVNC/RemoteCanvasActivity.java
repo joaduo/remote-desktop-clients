@@ -353,7 +353,10 @@ public class RemoteCanvasActivity extends AppCompatActivity implements OnKeyList
                 try { setModes(); } catch (NullPointerException e) { }
             }
         });
-        
+
+        Intent intent = getIntent();
+        canvas.ipNetworkTablet = intent.getStringExtra("ipNetworkTablet");
+        canvas.portNetworkTablet = intent.getIntExtra("portNetworkTablet", 40118);
         canvas.setOnKeyListener(this);
         canvas.setFocusableInTouchMode(true);
         canvas.setDrawingCacheEnabled(false);

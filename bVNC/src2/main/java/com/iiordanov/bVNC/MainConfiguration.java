@@ -62,7 +62,7 @@ public abstract class MainConfiguration extends FragmentActivity implements GetT
     protected int layoutID;
     GetTextFragment getPassword = null;
     GetTextFragment getNewPassword = null;
-    private boolean isConnecting = false;
+    protected boolean isConnecting = false;
     private Button buttonGeneratePubkey;
     private TextView versionAndCode;
     protected PermissionsManager permissionsManager;
@@ -224,7 +224,7 @@ public abstract class MainConfiguration extends FragmentActivity implements GetT
     /**
      * Starts the activity which makes a VNC connection and displays the remote desktop.
      */
-    private void start() {
+    protected void start() {
         isConnecting = true;
         updateSelectedFromView();
         Intent intent = new Intent(this, RemoteCanvasActivity.class);

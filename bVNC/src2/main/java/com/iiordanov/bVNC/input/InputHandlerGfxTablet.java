@@ -48,7 +48,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		super(activity, canvas, pointer, myVibrator);
 
 		// create network client in a separate thread
-		netClient = new NetworkClient();
+		netClient = new NetworkClient(canvas.ipNetworkTablet, canvas.portNetworkTablet);
 		new Thread(netClient).start();
 		new ConfigureNetworkingTask().execute(); //async resolve hostname
 	}

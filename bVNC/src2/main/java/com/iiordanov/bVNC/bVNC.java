@@ -24,6 +24,7 @@ package com.iiordanov.bVNC;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -72,6 +73,8 @@ public class bVNC extends MainConfiguration {
     private EditText sshPassphrase;
     private EditText ipText;
     private EditText portText;
+    private EditText ipTextNetworkTablet;
+    private EditText portTextNetworkTablet;
     private EditText passwordText;
     private Button goButton;
     private Button repeaterButton;
@@ -114,6 +117,8 @@ public class bVNC extends MainConfiguration {
         layoutUseX11Vnc = (LinearLayout) findViewById(R.id.layoutUseX11Vnc);
         sshServerEntry = (LinearLayout) findViewById(R.id.sshServerEntry);
         portText = (EditText) findViewById(R.id.textPORT);
+        ipTextNetworkTablet = (EditText) findViewById(R.id.textIPNetworkTablet);
+        portTextNetworkTablet = (EditText) findViewById(R.id.textPORTNetworkTablet);
         passwordText = (EditText) findViewById(R.id.textPASSWORD);
         textNickname = (EditText) findViewById(R.id.textNickname);
         textUsername = (EditText) findViewById(R.id.textUsername);
@@ -242,6 +247,17 @@ public class bVNC extends MainConfiguration {
         repeaterText = (TextView) findViewById(R.id.textRepeaterId);
     }
 
+
+    @Override
+    protected void start() {
+        isConnecting = true;
+        updateSelectedFromView();
+        Intent intent = new Intent(this, RemoteCanvasActivity.class);
+        intent.putExtra(Utils.getConnectionString(this), selected.Gen_getValues());
+        intent.putExtra("ipNetworkTablet", ipTextNetworkTablet.getText().toString());
+        intent.putExtra("portNetworkTablet", Integer.parseInt(portTextNetworkTablet.getText().toString()));
+        startActivity(intent);
+    }
 
     /**
      * Makes the ssh-related widgets visible/invisible.

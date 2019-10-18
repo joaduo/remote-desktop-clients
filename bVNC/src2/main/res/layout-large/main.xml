@@ -174,6 +174,23 @@ android:layout_height="fill_parent">
 			</LinearLayout>
 		</TableRow>
 		<TableRow>
+			<LinearLayout
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal"
+				android:layout_weight="1">
+				<EditText android:id="@+id/textIPNetworkTablet" android:layout_width="fill_parent" android:layout_height="wrap_content"
+					android:singleLine="true" android:layout_weight="1" android:textAppearance="?android:attr/textAppearanceLarge"
+					android:hint="@string/address_networktablet_caption_hint" android:nextFocusDown="@+id/textPORTNetworkTablet"
+					android:inputType="textNoSuggestions|textVisiblePassword"/>
+				<EditText android:id="@+id/textPORTNetworkTablet"
+					android:text="40118" android:hint="@string/port_hint"
+					android:layout_width="wrap_content" android:layout_height="wrap_content" android:singleLine="true"
+					android:layout_weight="0" android:textAppearance="?android:attr/textAppearanceLarge"
+					android:inputType="textNoSuggestions|textVisiblePassword"/>
+			</LinearLayout>
+		</TableRow>
+		<TableRow>
 			<EditText android:id="@+id/textUsername" android:layout_width="fill_parent" 
 				android:hint="@string/username_hint" android:layout_height="wrap_content"
 				android:singleLine="true" android:layout_weight="1" android:textAppearance="?android:attr/textAppearanceLarge"

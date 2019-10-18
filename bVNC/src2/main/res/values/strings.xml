@@ -9,6 +9,7 @@
 
     <string name="address_caption">VNC Server</string>
     <string name="address_caption_hint">VNC Server</string>
+    <string name="address_networktablet_caption_hint">Network Tablet UDP Server</string>
     <string name="address_caption_hint_tunneled">VNC Server</string>
     <string name="address_caption_ssh">SSH Server</string>
     <string name="address_caption_ssh_hint">SSH Server</string>

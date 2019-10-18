@@ -1,8 +1,7 @@
 package com.iiordanov.bVNC.gfxtablet;
 
-import android.content.SharedPreferences;
-import android.util.Log;
 
+import android.util.Log;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -19,18 +18,17 @@ public class NetworkClient implements Runnable {
 	public LinkedBlockingQueue<NetEvent> getQueue() { return motionQueue; }
 	
 	InetAddress destAddress;
-	//final SharedPreferences preferences;
+	String hostName;
+	int destPort;
 
-	//NetworkClient(SharedPreferences preferences) {
-	public NetworkClient() {
-		//this.preferences = preferences;
+	public NetworkClient(String hostName, int destPort) {
+		this.hostName = hostName;
+		this.destPort = destPort;
 	}
 
 	
 	public boolean reconfigureNetworking() {
 		try {
-			//String hostName = preferences.getString(SettingsActivity.KEY_PREF_HOST, "unknown.invalid");
-			String hostName = "192.168.200.104";
 			destAddress = InetAddress.getByName(hostName);
 		} catch (UnknownHostException e) {
 			destAddress = null;

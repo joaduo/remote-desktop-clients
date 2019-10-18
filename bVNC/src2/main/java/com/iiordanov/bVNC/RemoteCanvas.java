@@ -94,6 +94,9 @@ import com.iiordanov.freeaSPICE.*;
 public class RemoteCanvas extends android.support.v7.widget.AppCompatImageView implements Viewable {
     private final static String TAG = "RemoteCanvas";
 
+    public String ipNetworkTablet;
+    public int portNetworkTablet;
+
     public AbstractScaling canvasZoomer;
 
     // Variable indicating that we are currently scrolling in simulated touchpad mode.
