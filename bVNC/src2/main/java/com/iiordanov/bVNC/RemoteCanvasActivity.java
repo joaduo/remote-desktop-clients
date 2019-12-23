@@ -1374,23 +1374,9 @@ public class RemoteCanvasActivity extends AppCompatActivity implements OnKeyList
     // Send e.g. mouse events like hover and scroll to be handled.
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-        // Ignore TOOL_TYPE_FINGER events that come from the touchscreen with HOVER type action
-        // which cause pointer jumping trouble in simulated touchpad for some devices.
-        boolean toolTypeFinger = false;
-        if (Constants.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            toolTypeFinger = event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER;
-        }
-        int a = event.getAction();
-        if (! ( (a == MotionEvent.ACTION_HOVER_ENTER ||
-                 a == MotionEvent.ACTION_HOVER_EXIT  ||
-                 a == MotionEvent.ACTION_HOVER_MOVE) &&
-                event.getSource() == InputDevice.SOURCE_TOUCHSCREEN &&
-                toolTypeFinger
-               ) ) {
-            try {
-                return inputHandler.onTouchEvent(event);
-            } catch (NullPointerException e) { }
-        }
+        try {
+            return inputHandler.onGenericMotionEvent(event);
+        } catch (NullPointerException e) { }
         return super.onGenericMotionEvent(event);
     }
 
