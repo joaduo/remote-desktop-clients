@@ -254,7 +254,11 @@ public class bVNC extends MainConfiguration {
         updateSelectedFromView();
         Intent intent = new Intent(this, RemoteCanvasActivity.class);
         intent.putExtra(Utils.getConnectionString(this), selected.Gen_getValues());
-        intent.putExtra("ipNetworkTablet", ipTextNetworkTablet.getText().toString());
+        String ipTextNT = ipTextNetworkTablet.getText().toString();
+        if(ipTextNT.isEmpty()){
+            ipTextNT = ipText.getText().toString();
+        }
+        intent.putExtra("ipNetworkTablet", ipTextNT);
         intent.putExtra("portNetworkTablet", Integer.parseInt(portTextNetworkTablet.getText().toString()));
         startActivity(intent);
     }
