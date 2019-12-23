@@ -27,6 +27,7 @@ public interface InputHandler {
 	boolean onKeyDown(int keyCode, KeyEvent event);
 	boolean onKeyUp(int keyCode, KeyEvent event);
 	boolean onTouchEvent(MotionEvent event);
+	boolean onGenericMotionEvent(MotionEvent event);
 	String getDescription();
 	String getId();
 }

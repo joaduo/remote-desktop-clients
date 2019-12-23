@@ -393,7 +393,15 @@ abstract class InputHandlerGeneric extends GestureDetector.SimpleOnGestureListen
             immersiveSwipe = false;
         }
     }
-    
+
+	/*
+	 * This is needed to mimic Gfx Tablet protocol
+	 */
+	@Override
+	public boolean onGenericMotionEvent(MotionEvent e) {
+		return onTouchEvent(e);
+	}
+
 	/*
 	 * @see com.iiordanov.bVNC.input.InputHandler#onTouchEvent(android.view.MotionEvent)
 	 */
