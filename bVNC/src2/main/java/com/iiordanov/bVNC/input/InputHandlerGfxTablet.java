@@ -121,6 +121,11 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		return true;
 	}
 
+    /**
+     * Gather event in TAP_TIMEOUT millisenconds before deciding whether
+     *   - discard (because in fact the user is doing zoom)
+     *   - flush to the network (so they are drawn in the other side)
+     */
 	class EventHistory{
 		private ArrayList<NetEvent> history;
 		EventHistory(){
@@ -135,22 +140,18 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 				fy = canvas.getAbsY() + (event.getY(ptr) - 1.f * canvas.getTop()) / scale;
 				nx = normalize(fx, canvas.getImageWidth());
 				ny = normalize(fy, canvas.getImageHeight());
-				//short np = normalizePressure(event.getPressure(ptr) + event.getSize(ptr));
 				np = normalizePressure(event.getPressure(ptr));
 				Log.v(TAG, String.format("Touch event logged: action %d @ %f|%f (pressure %f)", event.getActionMasked(), event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
 				switch (event.getActionMasked()) {
 					case MotionEvent.ACTION_MOVE:
-						//netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, nx, ny, np));
 						history.add(new NetEvent(Type.TYPE_MOTION, nx, ny, np));
 						activity.showToolbar();
 						break;
 					case MotionEvent.ACTION_DOWN:
 						if (inRangeStatus == inRangeStatus.OutOfRange) {
 							inRangeStatus = inRangeStatus.FakeInRange;
-							//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, true));
 							history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, true));
 						}
-						//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, np, 0, true));
 						history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, np, 0, true));
 						gestureStatus = GestureStatus.FirstPointer;
 						activity.showToolbar();
@@ -165,11 +166,9 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			}
 		}
 		public void pointerUp(short nx, short ny, short npressure){
-			//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, 0, false));
 			history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, 0, false));
 			if (inRangeStatus == inRangeStatus.FakeInRange) {
 				inRangeStatus = inRangeStatus.OutOfRange;
-				//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, false));
 				history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, false));
 			}
 		}
@@ -194,7 +193,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 	}
 	GestureStatus gestureStatus;
 	long firstPointerTime = 0;
-	long TAP_TIMEOUT = 50;
+	long TAP_TIMEOUT = 70;
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
