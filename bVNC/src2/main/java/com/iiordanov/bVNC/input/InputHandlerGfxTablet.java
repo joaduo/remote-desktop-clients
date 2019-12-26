@@ -21,14 +21,11 @@
 
 package com.iiordanov.bVNC.input;
 
-import android.os.SystemClock;
 import android.os.Vibrator;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.view.View;
-import android.widget.Toast;
 
 import com.iiordanov.bVNC.R;
 import com.iiordanov.bVNC.RemoteCanvas;
@@ -37,6 +34,9 @@ import com.iiordanov.bVNC.gfxtablet.NetEvent;
 import com.iiordanov.bVNC.gfxtablet.NetEvent.Type;
 import com.iiordanov.bVNC.gfxtablet.NetworkClient;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+
 public class InputHandlerGfxTablet extends InputHandlerGeneric {
 	static final String TAG = "InputHandlerGfxTablet";
 	public static final String ID = "GFX_TABLET_MODE";
@@ -44,7 +44,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 	NetworkClient netClient;
 
 	public InputHandlerGfxTablet(RemoteCanvasActivity activity, RemoteCanvas canvas,
-                                 RemotePointer pointer, Vibrator myVibrator) {
+								 RemotePointer pointer, Vibrator myVibrator) {
 		super(activity, canvas, pointer, myVibrator);
 
 		// create network client in a separate thread
@@ -52,6 +52,8 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		new Thread(netClient).start();
 		new ConfigureNetworkingTask().execute(); //async resolve hostname
 		inRangeStatus = InRangeStatus.OutOfRange;
+		gestureStatus = GestureStatus.Nothing;
+		eventHistory = new EventHistory();
 	}
 
 	private class ConfigureNetworkingTask extends AsyncTask<Void, Void, Boolean> {
@@ -92,7 +94,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 
 	@Override
 	public boolean onGenericMotionEvent(MotionEvent event) {
-		float scale      = canvas.getZoomFactor();
+		float scale = canvas.getZoomFactor();
 
 		for (int ptr = 0; ptr < event.getPointerCount(); ptr++) {
 			float fx = canvas.getAbsX() + event.getX(ptr) / scale;
@@ -119,46 +121,127 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		return true;
 	}
 
+	class EventHistory{
+		private ArrayList<NetEvent> history;
+		EventHistory(){
+			history = new ArrayList<NetEvent>();
+		}
+		public void pushEvent(MotionEvent event){
+			float scale = canvas.getZoomFactor();
+			float fx,fy;
+			short nx,ny, np;
+			for (int ptr = 0; ptr < event.getPointerCount(); ptr++){
+				fx = canvas.getAbsX() + event.getX(ptr) / scale;
+				fy = canvas.getAbsY() + (event.getY(ptr) - 1.f * canvas.getTop()) / scale;
+				nx = normalize(fx, canvas.getImageWidth());
+				ny = normalize(fy, canvas.getImageHeight());
+				//short np = normalizePressure(event.getPressure(ptr) + event.getSize(ptr));
+				np = normalizePressure(event.getPressure(ptr));
+				Log.v(TAG, String.format("Touch event logged: action %d @ %f|%f (pressure %f)", event.getActionMasked(), event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
+				switch (event.getActionMasked()) {
+					case MotionEvent.ACTION_MOVE:
+						//netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, nx, ny, np));
+						history.add(new NetEvent(Type.TYPE_MOTION, nx, ny, np));
+						activity.showToolbar();
+						break;
+					case MotionEvent.ACTION_DOWN:
+						if (inRangeStatus == inRangeStatus.OutOfRange) {
+							inRangeStatus = inRangeStatus.FakeInRange;
+							//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, true));
+							history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, true));
+						}
+						//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, np, 0, true));
+						history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, np, 0, true));
+						gestureStatus = GestureStatus.FirstPointer;
+						activity.showToolbar();
+						break;
+					case MotionEvent.ACTION_UP:
+					case MotionEvent.ACTION_CANCEL:
+						pointerUp(nx,ny,np);
+                        gestureStatus = GestureStatus.Nothing;
+						break;
+				}
+
+			}
+		}
+		public void pointerUp(short nx, short ny, short npressure){
+			//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, 0, false));
+			history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, 0, false));
+			if (inRangeStatus == inRangeStatus.FakeInRange) {
+				inRangeStatus = inRangeStatus.OutOfRange;
+				//netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, false));
+				history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, false));
+			}
+		}
+		public void send(NetworkClient netClient){
+			for(NetEvent event : history){
+				netClient.getQueue().add(event);
+			}
+			history.clear();
+		}
+		public void clear(){
+			history.clear();
+		}
+	}
+	EventHistory eventHistory;
+
+	private enum GestureStatus {
+		Nothing,
+		FirstPointer,
+		WaitSecondPointer,
+		TapTimedOut,
+		Zooming
+	}
+	GestureStatus gestureStatus;
+	long firstPointerTime = 0;
+	long TAP_TIMEOUT = 50;
+
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		// Give priority to Scaling events
+		// Give priority to Scaling events when 2 fingers
 		if(event.getPointerCount() == 2){
+			if(gestureStatus != GestureStatus.Zooming){
+				if(gestureStatus == GestureStatus.WaitSecondPointer){
+					eventHistory.clear();
+				}
+				else{
+					float scale = canvas.getZoomFactor();
+					float fx = canvas.getAbsX() + event.getX() / scale;
+					float fy = canvas.getAbsY() + (event.getY() - 1.f * canvas.getTop()) / scale;
+					short nx = normalize(fx, canvas.getImageWidth());
+					short ny = normalize(fy, canvas.getImageHeight());
+					short np = normalizePressure(event.getPressure());
+					eventHistory.pointerUp(nx, ny, np);
+					eventHistory.send(netClient);
+				}
+			}
+			gestureStatus = GestureStatus.Zooming;
 			scalingGestureDetector.onTouchEvent(event);
+			gestureDetector.onTouchEvent(event);
 			return true;
 		}
-
-		float scale      = canvas.getZoomFactor();
-		for (int ptr = 0; ptr < event.getPointerCount(); ptr++){
-			float fx = canvas.getAbsX() + event.getX(ptr) / scale;
-			float fy = canvas.getAbsY() + (event.getY(ptr) - 1.f * canvas.getTop()) / scale;
-			short nx = normalize(fx, canvas.getImageWidth());
-			short ny = normalize(fy, canvas.getImageHeight());
-			//short npressure = normalizePressure(event.getPressure(ptr) + event.getSize(ptr));
-			short npressure = normalizePressure(event.getPressure(ptr));
-			Log.v(TAG, String.format("Touch event logged: action %d @ %f|%f (pressure %f)", event.getActionMasked(), event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
-			switch (event.getActionMasked()) {
-				case MotionEvent.ACTION_MOVE:
-					netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, nx, ny, npressure));
-					activity.showToolbar();
-					break;
-				case MotionEvent.ACTION_DOWN:
-					if (inRangeStatus == inRangeStatus.OutOfRange) {
-						inRangeStatus = inRangeStatus.FakeInRange;
-						netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, true));
-					}
-					netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, 0, true));
-					activity.showToolbar();
-					break;
-				case MotionEvent.ACTION_UP:
-				case MotionEvent.ACTION_CANCEL:
-					netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, 0, false));
-					if (inRangeStatus == inRangeStatus.FakeInRange) {
-						inRangeStatus = inRangeStatus.OutOfRange;
-						netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, false));
-					}
-					break;
+		else if (gestureStatus == GestureStatus.Zooming){
+			gestureStatus = GestureStatus.FirstPointer;
+		}
+		eventHistory.pushEvent(event);
+		if(gestureStatus == GestureStatus.Nothing){
+			eventHistory.send(netClient);
+		}
+		else{
+			if (gestureStatus == GestureStatus.FirstPointer){
+				firstPointerTime = Calendar.getInstance().getTimeInMillis();
+				gestureStatus = GestureStatus.WaitSecondPointer;
 			}
-
+			else if (gestureStatus == GestureStatus.WaitSecondPointer){
+				if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
+					gestureStatus = GestureStatus.TapTimedOut;
+					eventHistory.send(netClient);
+				}
+				// else do nothing,since we queued the event above.
+			}
+			else{
+				eventHistory.send(netClient);
+			}
 		}
 		return true;
 	}
@@ -170,21 +253,21 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 	@Override
 	public void onLongPress(MotionEvent e) {
 
-		// If we've performed a right/middle-click and the gesture is not over yet, do not start drag mode.
-		if (secondPointerWasDown || thirdPointerWasDown)
-			return;
-
-		//myVibrator.vibrate(Constants.SHORT_VIBRATION);
-
-		canvas.displayShortToastMessage("Panning");
-		endDragModesAndScrolling();
-		panMode = true;
+//		// If we've performed a right/middle-click and the gesture is not over yet, do not start drag mode.
+//		if (secondPointerWasDown || thirdPointerWasDown)
+//			return;
+//
+//		//myVibrator.vibrate(Constants.SHORT_VIBRATION);
+//
+//		canvas.displayShortToastMessage("Panning");
+//		endDragModesAndScrolling();
+//		panMode = true;
 	}
 
 	@Override
 	public boolean onSingleTapConfirmed(MotionEvent e) {
-		int metaState   = e.getMetaState();
-		activity.showToolbar();
+//		int metaState   = e.getMetaState();
+//		activity.showToolbar();
 		//pointer.leftButtonDown(getX(e), getY(e), metaState);
 		//SystemClock.sleep(50);
 		//pointer.releaseButton(getX(e), getY(e), metaState);
@@ -194,7 +277,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 
 	@Override
 	public boolean onDoubleTap (MotionEvent e) {
-		int metaState   = e.getMetaState();
+//		int metaState   = e.getMetaState();
 //		pointer.leftButtonDown(getX(e), getY(e), metaState);
 //		SystemClock.sleep(50);
 //		pointer.releaseButton(getX(e), getY(e), metaState);
