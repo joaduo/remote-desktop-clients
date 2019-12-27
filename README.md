@@ -1,5 +1,12 @@
 # Intro
 
+Fork from https://github.com/iiordanov/remote-desktop-clients which adds:
+
+New input mode:
+- pen pressure
+- Gfx Tablet network client support
+- Easier Zoom and Pan through gestures (2 fingers do zoom and pan)
+
 This is the source code for bVNC, aRDP, aSPICE and Opaque, four remote desktop
 clients for Android.
 
