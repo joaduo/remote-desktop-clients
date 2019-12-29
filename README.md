@@ -7,6 +7,17 @@ New input mode:
 - Gfx Tablet network client support
 - Easier Zoom and Pan through gestures (2 fingers do zoom and pan)
 
+# Installation
+
+Right now there are only Alpha Debug releases at:
+https://drive.google.com/drive/folders/12CLblx5RcKXq2zStKCEm-QiLG4TdKmHF?usp=sharing
+
+Get the latest one and install it through adb: `adb install -t <bVNC file>.apk`
+
+You need to enable developer tools on android and connect to your PC with usb cable.
+
+# Original Intro
+
 This is the source code for bVNC, aRDP, aSPICE and Opaque, four remote desktop
 clients for Android.
 
