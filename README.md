@@ -16,6 +16,23 @@ Get the latest one and install it through adb: `adb install -t <bVNC file>.apk`
 
 You need to enable developer tools on android and connect to your PC with usb cable.
 
+Then you need to install `./networktablet` client on linux using this repo:
+https://github.com/rfc2822/GfxTablet
+You can use the GfxTablet app to make sure the `./networktablet` client is working correctly.
+
+# Running VNC Gfx Tablet
+
+1. Start `./networktablet` (you may need to do `sudo ./networktablet` if you haven't set a group for accesing uinput)
+2. Start `x11vnc` (you may want to play with options like `x11vnc -forever -defer 0 -wait 1`, check `x11vnc --help`)
+3. If you want to have faster VNC connection you can forward the port through `adb`
+  - `adb reverse tcp:5900 tcp:5900`
+4. Set the `VNC Server` address to your PC local address serving VNC and running `./networktablet`)
+  - If you used adb forwarding in point 3 your `VNC Server`is `localhost`
+5. Set your `Network Tablet UDP server` to your PC local address (since you can't forward UDP protocol you must connect through your LAN (wifi, etc))
+  - Note that `Network Tablet UDP server` is not bein saved right now (sorry still alpha), so sometimes you may need to set it again
+6. Connect to your VNC, when you move the cursor a little transparent menu should appear. Ther you can go `input mode > gfx tablet`
+7. If your tablet supports a Stylys and pressure sensivity you should now have a tablet sending pressure sensivity (test on blender or GIMP (enable the device on GIMP))
+
 # Original Intro
 
 This is the source code for bVNC, aRDP, aSPICE and Opaque, four remote desktop
