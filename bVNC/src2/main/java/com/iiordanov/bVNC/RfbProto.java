@@ -1607,8 +1607,8 @@ class RfbProto implements RfbConnectable {
 
     public void stopTiming() {
         timing = false;
-        if (timeWaitedIn100us < timedKbits / 2)
-            timeWaitedIn100us = timedKbits / 2; // upper limit 20Mbit/s
+//        if (timeWaitedIn100us < timedKbits / 2)
+//            timeWaitedIn100us = timedKbits / 2; // upper limit 20Mbit/s
     }
 
     public long kbitsPerSecond() {
