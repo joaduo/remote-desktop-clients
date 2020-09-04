@@ -135,6 +135,7 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			float scale = canvas.getZoomFactor();
 			float fx,fy;
 			short nx,ny, np;
+			// GfxTablet original code visits all pointers (not sure why)
 			for (int ptr = 0; ptr < event.getPointerCount(); ptr++){
 				fx = canvas.getAbsX() + event.getX(ptr) / scale;
 				fy = canvas.getAbsY() + (event.getY(ptr) - 1.f * canvas.getTop()) / scale;
@@ -201,9 +202,13 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		if(event.getPointerCount() == 2){
 			if(gestureStatus != GestureStatus.Zooming){
 				if(gestureStatus == GestureStatus.WaitSecondPointer){
+					// discard 1-finger event history inside TAP_TIMEOUT
+					// user meant zooming
 					eventHistory.clear();
 				}
 				else{
+					// We were drawing with 1 finger and suddenly we switch to zoom/pan
+					// we need to raise the pen/finger and flush the event over the network
 					float scale = canvas.getZoomFactor();
 					float fx = canvas.getAbsX() + event.getX() / scale;
 					float fy = canvas.getAbsY() + (event.getY() - 1.f * canvas.getTop()) / scale;
@@ -214,33 +219,42 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 					eventHistory.send(netClient);
 				}
 			}
+			// mark we are now zooming
 			gestureStatus = GestureStatus.Zooming;
+			// so dispatch to 2-finger gesture detectors
 			scalingGestureDetector.onTouchEvent(event);
 			gestureDetector.onTouchEvent(event);
 			return true;
 		}
 		else if (gestureStatus == GestureStatus.Zooming){
+			// we previously detected 2 fingers, raised one
+			// trying to guess user's intentions
 			gestureStatus = GestureStatus.FirstPointer;
 		}
+
+		// we could probably ignore if more tha 1 finger  (at least for sending to the network)
+
+		// queue the 1-finger event (we don't know yet user's intention)
+		// check the event type and change gestureStatus accordingly
 		eventHistory.pushEvent(event);
-		if(gestureStatus == GestureStatus.Nothing){
-			eventHistory.send(netClient);
+		// if gestureStatus changed, then react
+		if (gestureStatus == GestureStatus.FirstPointer){
+			// 1-finger ACTION_DOWN, first finger is touching the screen
+			firstPointerTime = Calendar.getInstance().getTimeInMillis();
+			// we start waiting to see user's intentions (zooming or drawing)
+			gestureStatus = GestureStatus.WaitSecondPointer;
 		}
-		else{
-			if (gestureStatus == GestureStatus.FirstPointer){
-				firstPointerTime = Calendar.getInstance().getTimeInMillis();
-				gestureStatus = GestureStatus.WaitSecondPointer;
-			}
-			else if (gestureStatus == GestureStatus.WaitSecondPointer){
-				if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
-					gestureStatus = GestureStatus.TapTimedOut;
-					eventHistory.send(netClient);
-				}
-				// else do nothing,since we queued the event above.
-			}
-			else{
+		else if (gestureStatus == GestureStatus.WaitSecondPointer){
+			if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
+				gestureStatus = GestureStatus.TapTimedOut;
 				eventHistory.send(netClient);
 			}
+			// else do nothing,since we queued the event above.
+		}
+		else{
+			// gestureStatus is TapTimedOut or Nothing ( not Zooming, not FirstPointer, not WaitSecondPointer)
+			// means we flush the event over the network
+			eventHistory.send(netClient);
 		}
 		return true;
 	}
@@ -295,28 +309,6 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			}
 		}
 		return eventConsumed;
-	}
-
-	@Override
-	public boolean onScaleBegin(ScaleGestureDetector detector) {
-		//android.util.Log.i(TAG, "onScaleBegin ("+xInitialFocus+","+yInitialFocus+")");
-		inScaling           = false;
-		scalingJustFinished = false;
-		// Cancel any swipes that may have been registered last time.
-		inSwiping   = false;
-		scrollDown  = false;
-		scrollUp    = false;
-		scrollRight = false;
-		scrollLeft  = false;
-		return true;
-	}
-
-	@Override
-	public void onScaleEnd(ScaleGestureDetector detector) {
-		//android.util.Log.d(TAG, "onScaleEnd");
-		inScaling = false;
-		inSwiping = false;
-		scalingJustFinished = true;
 	}
 }
 
