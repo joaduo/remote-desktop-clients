@@ -174,12 +174,12 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		}
 		public void pointerUp(MotionEvent event, int ptr){
 			history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-					.setButton(0, false));
+						.setButton(0, false));
 			if (inRangeStatus == inRangeStatus.FakeInRange) {
 				inRangeStatus = inRangeStatus.OutOfRange;
 				history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-						.setPressure((short)0)
-						.setButton(-1, false));
+							.setPressure((short)0)
+							.setButton(-1, false));
 			}
 		}
 		public void send(NetworkClient netClient){
