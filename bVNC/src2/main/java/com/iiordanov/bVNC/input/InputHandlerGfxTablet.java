@@ -94,83 +94,92 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 
 	@Override
 	public boolean onGenericMotionEvent(MotionEvent event) {
-		float scale = canvas.getZoomFactor();
-
 		for (int ptr = 0; ptr < event.getPointerCount(); ptr++) {
-			float fx = canvas.getAbsX() + event.getX(ptr) / scale;
-			float fy = canvas.getAbsY() + (event.getY(ptr) - 1.f * canvas.getTop()) / scale;
-			short nx = normalize(fx, canvas.getImageWidth());
-			short ny = normalize(fy, canvas.getImageHeight());
-			//short npressure = normalizePressure(event.getPressure(ptr) + event.getSize(ptr));
-			short npressure = normalizePressure(event.getPressure(ptr));
-			Log.v(TAG, String.format("Generic motion event logged: %f|%f, pressure %f", event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
+			//Log.v(TAG, String.format("Generic motion event logged: %f|%f, pressure %f", event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
 			switch (event.getActionMasked()) {
 				case MotionEvent.ACTION_HOVER_MOVE:
-					netClient.getQueue().add(new NetEvent(Type.TYPE_MOTION, nx, ny, npressure));
+					netClient.getQueue().add(buildNetEvent(Type.TYPE_MOTION, event, ptr));
 					break;
 				case MotionEvent.ACTION_HOVER_ENTER:
 					inRangeStatus = InRangeStatus.InRange;
-					netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, -1, true));
+					netClient.getQueue().add(buildNetEvent(Type.TYPE_MOTION, event, ptr)
+											 .setButton(-1, true));
 					break;
 				case MotionEvent.ACTION_HOVER_EXIT:
 					inRangeStatus = InRangeStatus.OutOfRange;
-					netClient.getQueue().add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, -1, false));
+					netClient.getQueue().add(buildNetEvent(Type.TYPE_MOTION, event, ptr)
+							.setButton(-1, false));
 					break;
 			}
 		}
 		return true;
 	}
+	public NetEvent buildNetEvent(Type event_type, MotionEvent event, int ptr){
+		return buildNetEventH(event_type, event, ptr, -1);
+	}
+	public NetEvent buildNetEventH(Type event_type, MotionEvent event, int ptr, int pos){
+		float scale = canvas.getZoomFactor();
+		float fx,fy;
+		if (pos == -1) {
+			fx = canvas.getAbsX() + event.getX(ptr) / scale;
+			fy = canvas.getAbsY() + (event.getY(ptr) - 1.f * canvas.getTop()) / scale;
+		} else {
+			fx = canvas.getAbsX() + event.getHistoricalX(ptr, pos) / scale;
+			fy = canvas.getAbsY() + (event.getHistoricalY(ptr, pos) - 1.f * canvas.getTop()) / scale;
+		}
+		short nx = normalize(fx, canvas.getImageWidth());
+		short ny = normalize(fy, canvas.getImageHeight());
+		short np = normalizePressure(event.getPressure(ptr));
+		return new NetEvent(event_type, nx, ny, np);
+	}
 
-    /**
-     * Gather event in TAP_TIMEOUT millisenconds before deciding whether
-     *   - discard (because in fact the user is doing zoom)
-     *   - flush to the network (so they are drawn in the other side)
-     */
+	/**
+	 * Gather event in TAP_TIMEOUT millisenconds before deciding whether
+	 *   - discard (because in fact the user is doing zoom)
+	 *   - flush to the network (so they are drawn in the other side)
+	 */
 	class EventHistory{
 		private ArrayList<NetEvent> history;
 		EventHistory(){
 			history = new ArrayList<NetEvent>();
 		}
 		public void pushEvent(MotionEvent event){
-			float scale = canvas.getZoomFactor();
-			float fx,fy;
-			short nx,ny, np;
-			// GfxTablet original code visits all pointers (not sure why)
 			for (int ptr = 0; ptr < event.getPointerCount(); ptr++){
-				fx = canvas.getAbsX() + event.getX(ptr) / scale;
-				fy = canvas.getAbsY() + (event.getY(ptr) - 1.f * canvas.getTop()) / scale;
-				nx = normalize(fx, canvas.getImageWidth());
-				ny = normalize(fy, canvas.getImageHeight());
-				np = normalizePressure(event.getPressure(ptr));
-				Log.v(TAG, String.format("Touch event logged: action %d @ %f|%f (pressure %f)", event.getActionMasked(), event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
+				//Log.v(TAG, String.format("Touch event logged: action %d @ %f|%f (pressure %f)", event.getActionMasked(), event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
 				switch (event.getActionMasked()) {
 					case MotionEvent.ACTION_MOVE:
-						history.add(new NetEvent(Type.TYPE_MOTION, nx, ny, np));
+						history.add(buildNetEvent(Type.TYPE_MOTION, event, ptr));
 						activity.showToolbar();
 						break;
 					case MotionEvent.ACTION_DOWN:
 						if (inRangeStatus == inRangeStatus.OutOfRange) {
 							inRangeStatus = inRangeStatus.FakeInRange;
-							history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, true));
+							history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+										.setPressure((short)0)
+										.setButton(-1, true));
 						}
-						history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, np, 0, true));
+						history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+									.setButton(0, true));
 						gestureStatus = GestureStatus.FirstPointer;
 						activity.showToolbar();
 						break;
 					case MotionEvent.ACTION_UP:
 					case MotionEvent.ACTION_CANCEL:
-						pointerUp(nx,ny,np);
-                        gestureStatus = GestureStatus.Nothing;
+						pointerUp(event, ptr);
+						gestureStatus = GestureStatus.Nothing;
 						break;
 				}
 
 			}
 		}
-		public void pointerUp(short nx, short ny, short npressure){
-			history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, npressure, 0, false));
+		public void pointerUp(MotionEvent event, int ptr){
+			history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+					.setButton(0, false));
 			if (inRangeStatus == inRangeStatus.FakeInRange) {
 				inRangeStatus = inRangeStatus.OutOfRange;
-				history.add(new NetEvent(Type.TYPE_BUTTON, nx, ny, (short)0, -1, false));
+				history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+						.setPressure((short)0)
+						.setButton(-1, false));
 			}
 		}
 		public void send(NetworkClient netClient){
@@ -208,14 +217,8 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 				}
 				else{
 					// We were drawing with 1 finger and suddenly we switch to zoom/pan
-					// we need to raise the pen/finger and flush the event over the network
-					float scale = canvas.getZoomFactor();
-					float fx = canvas.getAbsX() + event.getX() / scale;
-					float fy = canvas.getAbsY() + (event.getY() - 1.f * canvas.getTop()) / scale;
-					short nx = normalize(fx, canvas.getImageWidth());
-					short ny = normalize(fy, canvas.getImageHeight());
-					short np = normalizePressure(event.getPressure());
-					eventHistory.pointerUp(nx, ny, np);
+					// we need to raise the pen/finger
+					eventHistory.pointerUp(event, 0);
 					eventHistory.send(netClient);
 				}
 			}
@@ -231,30 +234,33 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			// trying to guess user's intentions
 			gestureStatus = GestureStatus.FirstPointer;
 		}
-
-		// we could probably ignore if more tha 1 finger  (at least for sending to the network)
-
 		// queue the 1-finger event (we don't know yet user's intention)
-		// check the event type and change gestureStatus accordingly
+		// check the event type and change GestureStatus accordingly
 		eventHistory.pushEvent(event);
-		// if gestureStatus changed, then react
-		if (gestureStatus == GestureStatus.FirstPointer){
-			// 1-finger ACTION_DOWN, first finger is touching the screen
-			firstPointerTime = Calendar.getInstance().getTimeInMillis();
-			// we start waiting to see user's intentions (zooming or drawing)
-			gestureStatus = GestureStatus.WaitSecondPointer;
-		}
-		else if (gestureStatus == GestureStatus.WaitSecondPointer){
-			if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
-				gestureStatus = GestureStatus.TapTimedOut;
-				eventHistory.send(netClient);
-			}
-			// else do nothing,since we queued the event above.
+		if(gestureStatus == GestureStatus.Nothing){
+			// ACITION_UP or ACTION_CANCEL
+			// we want to dispatch 1-finger event
+			eventHistory.send(netClient);
 		}
 		else{
-			// gestureStatus is TapTimedOut or Nothing ( not Zooming, not FirstPointer, not WaitSecondPointer)
-			// means we flush the event over the network
-			eventHistory.send(netClient);
+			if (gestureStatus == GestureStatus.FirstPointer){
+				// 1-finger ACTION_DOWN, first finger is touching the screen
+				firstPointerTime = Calendar.getInstance().getTimeInMillis();
+				// we start waiting to see user's intentions (zooming or drawing)
+				gestureStatus = GestureStatus.WaitSecondPointer;
+			}
+			else if (gestureStatus == GestureStatus.WaitSecondPointer){
+				if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
+					gestureStatus = GestureStatus.TapTimedOut;
+					eventHistory.send(netClient);
+				}
+				// else do nothing,since we queued the event above.
+			}
+			else{
+
+				// TapTimedOut (not Nothing, not Zooming, not FirstPointer, not WaitSecondPointer)
+				eventHistory.send(netClient);
+			}
 		}
 		return true;
 	}
@@ -309,6 +315,28 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			}
 		}
 		return eventConsumed;
+	}
+
+	@Override
+	public boolean onScaleBegin(ScaleGestureDetector detector) {
+		//android.util.Log.i(TAG, "onScaleBegin ("+xInitialFocus+","+yInitialFocus+")");
+		inScaling           = false;
+		scalingJustFinished = false;
+		// Cancel any swipes that may have been registered last time.
+		inSwiping   = false;
+		scrollDown  = false;
+		scrollUp    = false;
+		scrollRight = false;
+		scrollLeft  = false;
+		return true;
+	}
+
+	@Override
+	public void onScaleEnd(ScaleGestureDetector detector) {
+		//android.util.Log.d(TAG, "onScaleEnd");
+		inScaling = false;
+		inSwiping = false;
+		scalingJustFinished = true;
 	}
 }
 
