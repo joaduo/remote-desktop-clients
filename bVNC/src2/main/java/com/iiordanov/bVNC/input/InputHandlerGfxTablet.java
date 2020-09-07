@@ -237,30 +237,24 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		// queue the 1-finger event (we don't know yet user's intention)
 		// check the event type and change GestureStatus accordingly
 		eventHistory.pushEvent(event);
-		if(gestureStatus == GestureStatus.Nothing){
-			// ACITION_UP or ACTION_CANCEL
-			// we want to dispatch 1-finger event
-			eventHistory.send(netClient);
+		// if gestureStatus changed, then react
+		if (gestureStatus == GestureStatus.FirstPointer){
+			// 1-finger ACTION_DOWN, first finger is touching the screen
+			firstPointerTime = Calendar.getInstance().getTimeInMillis();
+			// we start waiting to see user's intentions (zooming or drawing)
+			gestureStatus = GestureStatus.WaitSecondPointer;
 		}
-		else{
-			if (gestureStatus == GestureStatus.FirstPointer){
-				// 1-finger ACTION_DOWN, first finger is touching the screen
-				firstPointerTime = Calendar.getInstance().getTimeInMillis();
-				// we start waiting to see user's intentions (zooming or drawing)
-				gestureStatus = GestureStatus.WaitSecondPointer;
-			}
-			else if (gestureStatus == GestureStatus.WaitSecondPointer){
-				if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
-					gestureStatus = GestureStatus.TapTimedOut;
-					eventHistory.send(netClient);
-				}
-				// else do nothing,since we queued the event above.
-			}
-			else{
-
-				// TapTimedOut (not Nothing, not Zooming, not FirstPointer, not WaitSecondPointer)
+		else if (gestureStatus == GestureStatus.WaitSecondPointer){
+			if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
+				gestureStatus = GestureStatus.TapTimedOut;
 				eventHistory.send(netClient);
 			}
+			// else do nothing,since we queued the event above.
+		}
+		else{
+			// gestureStatus is TapTimedOut or Nothing ( not Zooming, not FirstPointer, not WaitSecondPointer)
+			// means we flush the event over the network
+			eventHistory.send(netClient);
 		}
 		return true;
 	}
