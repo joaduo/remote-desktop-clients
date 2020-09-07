@@ -102,18 +102,19 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 					break;
 				case MotionEvent.ACTION_HOVER_ENTER:
 					inRangeStatus = InRangeStatus.InRange;
-					netClient.getQueue().add(buildNetEvent(Type.TYPE_MOTION, event, ptr)
-											 .setButton(-1, true));
+					netClient.getQueue().add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+											 .setButton(NetEvent.RANGE_BUTTON, true));
 					break;
 				case MotionEvent.ACTION_HOVER_EXIT:
 					inRangeStatus = InRangeStatus.OutOfRange;
-					netClient.getQueue().add(buildNetEvent(Type.TYPE_MOTION, event, ptr)
-							.setButton(-1, false));
+					netClient.getQueue().add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+											 .setButton(NetEvent.RANGE_BUTTON, false));
 					break;
 			}
 		}
 		return true;
 	}
+
 	public NetEvent buildNetEvent(Type event_type, MotionEvent event, int ptr){
 		return buildNetEventH(event_type, event, ptr, -1);
 	}
@@ -156,10 +157,10 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 							inRangeStatus = inRangeStatus.FakeInRange;
 							history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
 										.setPressure((short)0)
-										.setButton(-1, true));
+										.setButton(NetEvent.RANGE_BUTTON, true));
 						}
 						history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-									.setButton(0, true));
+									.setButton(NetEvent.DRAW_BUTTON, true));
 						gestureStatus = GestureStatus.FirstPointer;
 						activity.showToolbar();
 						break;
@@ -174,12 +175,12 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		}
 		public void pointerUp(MotionEvent event, int ptr){
 			history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-						.setButton(0, false));
+						.setButton(NetEvent.DRAW_BUTTON, false));
 			if (inRangeStatus == inRangeStatus.FakeInRange) {
 				inRangeStatus = inRangeStatus.OutOfRange;
 				history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
 							.setPressure((short)0)
-							.setButton(-1, false));
+							.setButton(NetEvent.RANGE_BUTTON, false));
 			}
 		}
 		public void send(NetworkClient netClient){

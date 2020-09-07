@@ -14,6 +14,8 @@ public class NetEvent {
 		// not specified in protocol, only needed to shut down network thread 
 		TYPE_DISCONNECT
 	}
+	public static final int RANGE_BUTTON = -1;
+	public static final int DRAW_BUTTON = 0;
 	static final String signature = "GfxTablet";
 	static final short protocol_version = 2;
 	
@@ -38,7 +40,18 @@ public class NetEvent {
 		this.button = (byte)button;
 		this.button_down = (byte)(button_down ? 1 : 0);
 	}
-		
+
+	public NetEvent setButton(int button, boolean button_down){
+		this.button = (byte)button;
+		this.button_down = (byte)(button_down ? 1 : 0);
+		return this;
+	}
+
+	public NetEvent setPressure(short pressure){
+		this.pressure = pressure;
+		return this;
+	}
+
 	public byte[] toByteArray() {
 		if (type == Type.TYPE_DISCONNECT)
 			return null;
