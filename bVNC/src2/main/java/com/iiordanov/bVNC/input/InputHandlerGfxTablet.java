@@ -94,29 +94,48 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 
 	@Override
 	public boolean onGenericMotionEvent(MotionEvent event) {
-		for (int ptr = 0; ptr < event.getPointerCount(); ptr++) {
-			//Log.v(TAG, String.format("Generic motion event logged: %f|%f, pressure %f", event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
-			switch (event.getActionMasked()) {
-				case MotionEvent.ACTION_HOVER_MOVE:
-					netClient.getQueue().add(buildNetEvent(Type.TYPE_MOTION, event, ptr));
-					break;
-				case MotionEvent.ACTION_HOVER_ENTER:
-					inRangeStatus = InRangeStatus.InRange;
-					netClient.getQueue().add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-											 .setButton(NetEvent.RANGE_BUTTON, true));
-					break;
-				case MotionEvent.ACTION_HOVER_EXIT:
-					inRangeStatus = InRangeStatus.OutOfRange;
-					netClient.getQueue().add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-											 .setButton(NetEvent.RANGE_BUTTON, false));
-					break;
-			}
+		//Log.v(TAG, String.format("Generic motion event logged: %f|%f, pressure %f", event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
+		switch (event.getActionMasked()) {
+			case MotionEvent.ACTION_HOVER_MOVE:
+				addNetEvent(buildNetEvent(Type.TYPE_MOTION, event));
+				break;
+			case MotionEvent.ACTION_HOVER_ENTER:
+				inRangeStatus = InRangeStatus.InRange;
+				addNetEvent(buildNetEvent(Type.TYPE_BUTTON, event)
+							.setButton(NetEvent.RANGE_BUTTON, true));
+				break;
+			case MotionEvent.ACTION_HOVER_EXIT:
+				inRangeStatus = InRangeStatus.OutOfRange;
+				addNetEvent(buildNetEvent(Type.TYPE_BUTTON, event)
+							.setButton(NetEvent.RANGE_BUTTON, false));
+				break;
 		}
 		return true;
 	}
 
-	public NetEvent buildNetEvent(Type event_type, MotionEvent event, int ptr){
-		return buildNetEventH(event_type, event, ptr, -1);
+	private byte latestButton, latestButtonDown;
+	public void addNetEvent(NetEvent event){
+		// This menthod makes sure we don't repeat same button press event twice
+		if( event.type == Type.TYPE_BUTTON
+			&& event.button == this.latestButton
+			&& event.button_down == this.latestButtonDown){
+			Log.d(TAG, String.format("Ignoring repeated NetEvent button event %d %d", event.button, event.button_down));
+		}
+		else{
+			if(event.type == Type.TYPE_BUTTON){
+				// save for future comparisons
+				this.latestButton = event.button;
+				this.latestButtonDown = event.button_down;
+			}
+			netClient.getQueue().add(event);
+		}
+	}
+	public NetEvent buildNetEvent(Type event_type, MotionEvent event){
+		// build a NetEvent for several pointers
+		return buildNetEventH(event_type, event, 0, -1);
+	}
+	public NetEvent buildNetEventH(Type event_type, MotionEvent event, int pos){
+		return buildNetEventH(event_type, event, 0, pos);
 	}
 	public NetEvent buildNetEventH(Type event_type, MotionEvent event, int ptr, int pos){
 		float scale = canvas.getZoomFactor();
@@ -145,47 +164,54 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 			history = new ArrayList<NetEvent>();
 		}
 		public void pushEvent(MotionEvent event){
-			for (int ptr = 0; ptr < event.getPointerCount(); ptr++){
-				//Log.v(TAG, String.format("Touch event logged: action %d @ %f|%f (pressure %f)", event.getActionMasked(), event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
-				switch (event.getActionMasked()) {
+			//Log.v(TAG, String.format("Touch event logged: action %d @ %f|%f (pressure %f)", event.getActionMasked(), event.getX(ptr), event.getY(ptr), event.getPressure(ptr)));
+			int action = event.getActionMasked();
+			for (int pos = 0; pos < event.getHistorySize(); pos++){
+				switch (action){
 					case MotionEvent.ACTION_MOVE:
-						history.add(buildNetEvent(Type.TYPE_MOTION, event, ptr));
-						activity.showToolbar();
-						break;
-					case MotionEvent.ACTION_DOWN:
-						if (inRangeStatus == inRangeStatus.OutOfRange) {
-							inRangeStatus = inRangeStatus.FakeInRange;
-							history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-										.setPressure((short)0)
-										.setButton(NetEvent.RANGE_BUTTON, true));
-						}
-						history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
-									.setButton(NetEvent.DRAW_BUTTON, true));
-						gestureStatus = GestureStatus.FirstPointer;
-						activity.showToolbar();
-						break;
 					case MotionEvent.ACTION_UP:
 					case MotionEvent.ACTION_CANCEL:
-						pointerUp(event, ptr);
-						gestureStatus = GestureStatus.Nothing;
+						history.add(buildNetEventH(Type.TYPE_MOTION, event, pos));
 						break;
 				}
-
+			}
+			switch (action) {
+				case MotionEvent.ACTION_MOVE:
+					history.add(buildNetEvent(Type.TYPE_MOTION, event));
+					activity.showToolbar();
+					break;
+				case MotionEvent.ACTION_DOWN:
+					if (inRangeStatus == inRangeStatus.OutOfRange) {
+						inRangeStatus = inRangeStatus.FakeInRange;
+						history.add(buildNetEvent(Type.TYPE_BUTTON, event)
+									.setPressure((short)0)
+									.setButton(NetEvent.RANGE_BUTTON, true));
+					}
+					history.add(buildNetEvent(Type.TYPE_BUTTON, event)
+								.setButton(NetEvent.DRAW_BUTTON, true));
+					gestureStatus = GestureStatus.FirstPointer;
+					activity.showToolbar();
+					break;
+				case MotionEvent.ACTION_UP:
+				case MotionEvent.ACTION_CANCEL:
+					pointerUp(event);
+					gestureStatus = GestureStatus.Nothing;
+					break;
 			}
 		}
-		public void pointerUp(MotionEvent event, int ptr){
-			history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+		public void pointerUp(MotionEvent event){
+			history.add(buildNetEvent(Type.TYPE_BUTTON, event)
 						.setButton(NetEvent.DRAW_BUTTON, false));
 			if (inRangeStatus == inRangeStatus.FakeInRange) {
 				inRangeStatus = inRangeStatus.OutOfRange;
-				history.add(buildNetEvent(Type.TYPE_BUTTON, event, ptr)
+				history.add(buildNetEvent(Type.TYPE_BUTTON, event)
 							.setPressure((short)0)
 							.setButton(NetEvent.RANGE_BUTTON, false));
 			}
 		}
-		public void send(NetworkClient netClient){
+		public void send(){
 			for(NetEvent event : history){
-				netClient.getQueue().add(event);
+				addNetEvent(event);
 			}
 			history.clear();
 		}
@@ -219,8 +245,8 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 				else{
 					// We were drawing with 1 finger and suddenly we switch to zoom/pan
 					// we need to raise the pen/finger
-					eventHistory.pointerUp(event, 0);
-					eventHistory.send(netClient);
+					eventHistory.pointerUp(event);
+					eventHistory.send();
 				}
 			}
 			// mark we are now zooming
@@ -248,14 +274,14 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 		else if (gestureStatus == GestureStatus.WaitSecondPointer){
 			if(Calendar.getInstance().getTimeInMillis() - firstPointerTime > TAP_TIMEOUT){
 				gestureStatus = GestureStatus.TapTimedOut;
-				eventHistory.send(netClient);
+				eventHistory.send();
 			}
 			// else do nothing,since we queued the event above.
 		}
 		else{
 			// gestureStatus is TapTimedOut or Nothing ( not Zooming, not FirstPointer, not WaitSecondPointer)
 			// means we flush the event over the network
-			eventHistory.send(netClient);
+			eventHistory.send();
 		}
 		return true;
 	}

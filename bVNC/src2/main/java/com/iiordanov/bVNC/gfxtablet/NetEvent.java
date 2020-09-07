@@ -19,9 +19,9 @@ public class NetEvent {
 	static final String signature = "GfxTablet";
 	static final short protocol_version = 2;
 	
-	final Type type;
-	short x, y, pressure;
-	byte button, button_down;
+	public final Type type;
+	public short x, y, pressure;
+	public byte button, button_down;
 
 	
 	public NetEvent(Type type) {
