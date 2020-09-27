@@ -139,25 +139,17 @@ class ZoomScaling extends AbstractScaling {
         
         float oldScale;
         float newScale = scaleFactor * scaling;
-        if (scaleFactor < 1) {
-            if (newScale < minimumScale) {
-                newScale = minimumScale;
-            }
+        if (newScale < minimumScale) {
+            newScale = minimumScale;
         }
-        else {
-            if (newScale > 10) {
-                newScale = 10;
-            }
+        if (newScale > 10) {
+            newScale = 10;
         }
         
         RemoteCanvas canvas = activity.getCanvas();
-        // ax is the absolute x of the focus
-        int xPan = canvas.absoluteXPosition;
-        float ax = (fx / scaling) + xPan;
-        float newXPan = (scaling * xPan - scaling * ax + newScale * ax)/newScale;
-        int yPan = canvas.absoluteYPosition;
-        float ay = (fy / scaling) + yPan;
-        float newYPan = (scaling * yPan - scaling * ay + newScale * ay)/newScale;
+        float relXPan =  fx / scaling - fx / newScale;
+        float relYPan =  fy * (1 / scaling - 1 / newScale);
+        //float relYPan =  0.10f * fy / scaling;
         
         // Here we do snapping to 1:1. If we are approaching scale = 1, we snap to it.
         oldScale = scaling;
@@ -177,7 +169,7 @@ class ZoomScaling extends AbstractScaling {
         
         // Only if we have actually scaled do we pan and potentially set mouse position.
         if (oldScale != newScale) {
-            canvas.relativePan((int)(newXPan - xPan), (int)(newYPan - yPan));
+            canvas.relativePan((int)(relXPan), (int)(relYPan));
             canvas.getPointer().movePointerToMakeVisible();
         }
     }    
