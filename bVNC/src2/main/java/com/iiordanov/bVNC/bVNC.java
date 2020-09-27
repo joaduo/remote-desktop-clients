@@ -372,6 +372,8 @@ public class bVNC extends MainConfiguration {
         }
 
         portText.setText(Integer.toString(selected.getPort()));
+        ipTextNetworkTablet.setText(selected.getNTAddress());
+        portTextNetworkTablet.setText(Integer.toString(selected.getNTPort()));
 
         if (selected.getKeepPassword() || selected.getPassword().length() > 0) {
             passwordText.setText(selected.getPassword());
@@ -438,8 +440,10 @@ public class bVNC extends MainConfiguration {
         }
         selected.setConnectionType(selectedConnType);
         selected.setAddress(ipText.getText().toString());
+        selected.setNTAddress(ipTextNetworkTablet.getText().toString());
         try {
             selected.setPort(Integer.parseInt(portText.getText().toString()));
+            selected.setNTPort(Integer.parseInt(portTextNetworkTablet.getText().toString()));
             selected.setSshPort(Integer.parseInt(sshPort.getText().toString()));
         } catch (NumberFormatException nfe) {
         }

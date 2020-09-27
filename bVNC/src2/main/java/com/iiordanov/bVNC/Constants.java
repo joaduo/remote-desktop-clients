@@ -40,6 +40,7 @@ public class Constants {
     public static final int DEFAULT_SSH_PORT = 22;
     public static final int LOGCAT_MAX_LINES = 500;
     public static volatile int DEFAULT_PROTOCOL_PORT = 5900;
+    public static volatile int DEFAULT_NT_PROTOCOL_PORT = 40118;
     public static final int DEFAULT_VNC_PORT = 5900;
     public static final int DEFAULT_RDP_PORT = 3389;
     

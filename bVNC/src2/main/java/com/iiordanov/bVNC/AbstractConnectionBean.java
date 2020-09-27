@@ -5,7 +5,7 @@ package com.iiordanov.bVNC;
 public abstract class AbstractConnectionBean extends com.antlersoft.android.dbimpl.IdImplementationBase implements IConnectionBean {
 
     public static final String GEN_TABLE_NAME = "CONNECTION_BEAN";
-    public static final int GEN_COUNT = 76;
+    public static final int GEN_COUNT = 78;
 
     // Field constants
     public static final String GEN_FIELD__ID = "_id";
@@ -70,6 +70,10 @@ public abstract class AbstractConnectionBean extends com.antlersoft.android.dbim
     public static final int GEN_ID_ADDRESS = 29;
     public static final String GEN_FIELD_PORT = "PORT";
     public static final int GEN_ID_PORT = 30;
+    public static final String GEN_FIELD_NT_ADDRESS = "NT_ADDRESS";
+    public static final int GEN_ID_NT_ADDRESS = 76;
+    public static final String GEN_FIELD_NT_PORT = "NT_PORT";
+    public static final int GEN_ID_NT_PORT = 77;
     public static final String GEN_FIELD_CACERT = "CACERT";
     public static final int GEN_ID_CACERT = 31;
     public static final String GEN_FIELD_CACERTPATH = "CACERTPATH";
@@ -273,6 +277,8 @@ public abstract class AbstractConnectionBean extends com.antlersoft.android.dbim
     private java.lang.String gen_sshHostKey;
     private java.lang.String gen_address;
     private int gen_port;
+    private java.lang.String gen_nt_address;
+    private int gen_nt_port;
     private java.lang.String gen_caCert;
     private java.lang.String gen_caCertPath;
     private int gen_tlsPort;
@@ -385,6 +391,10 @@ public abstract class AbstractConnectionBean extends com.antlersoft.android.dbim
     public void setAddress(java.lang.String arg_address) { gen_address = arg_address; }
     public int getPort() { return gen_port; }
     public void setPort(int arg_port) { gen_port = arg_port; }
+    public java.lang.String getNTAddress() { return gen_nt_address; }
+    public void setNTAddress(java.lang.String arg_address) { gen_nt_address = arg_address; }
+    public int getNTPort() { return gen_nt_port; }
+    public void setNTPort(int arg_port) { gen_nt_port = arg_port; }
     public java.lang.String getCaCert() { return gen_caCert; }
     public void setCaCert(java.lang.String arg_caCert) { gen_caCert = arg_caCert; }
     public java.lang.String getCaCertPath() { return gen_caCertPath; }
@@ -554,6 +564,8 @@ public abstract class AbstractConnectionBean extends com.antlersoft.android.dbim
         values.put(GEN_FIELD_REMOTESOUNDTYPE,Integer.toString(this.gen_remoteSoundType));
         values.put(GEN_FIELD_VIEWONLY,(this.gen_viewOnly ? "1" : "0"));
         values.put(GEN_FIELD_LAYOUTMAP,this.gen_layoutMap);
+        values.put(GEN_FIELD_NT_ADDRESS,this.gen_nt_address);
+        values.put(GEN_FIELD_NT_PORT,Integer.toString(this.gen_nt_port));
         return values;
     }
 
@@ -644,6 +656,8 @@ public abstract class AbstractConnectionBean extends com.antlersoft.android.dbim
         result[73] = cursor.getColumnIndex(GEN_FIELD_REMOTESOUNDTYPE);
         result[74] = cursor.getColumnIndex(GEN_FIELD_VIEWONLY);
         result[75] = cursor.getColumnIndex(GEN_FIELD_LAYOUTMAP);
+        result[76] = cursor.getColumnIndex(GEN_FIELD_NT_ADDRESS);
+        result[77] = cursor.getColumnIndex(GEN_FIELD_NT_PORT);
         return result;
     }
 
@@ -743,6 +757,12 @@ public abstract class AbstractConnectionBean extends com.antlersoft.android.dbim
         }
         if ( columnIndices[GEN_ID_PORT] >= 0 && ! cursor.isNull(columnIndices[GEN_ID_PORT])) {
             gen_port = (int)cursor.getInt(columnIndices[GEN_ID_PORT]);
+        }
+        if ( columnIndices[GEN_ID_NT_ADDRESS] >= 0 && ! cursor.isNull(columnIndices[GEN_ID_NT_ADDRESS])) {
+            gen_nt_address = cursor.getString(columnIndices[GEN_ID_NT_ADDRESS]);
+        }
+        if ( columnIndices[GEN_ID_NT_PORT] >= 0 && ! cursor.isNull(columnIndices[GEN_ID_NT_PORT])) {
+            gen_nt_port = (int)cursor.getInt(columnIndices[GEN_ID_NT_PORT]);
         }
         if ( columnIndices[GEN_ID_CACERT] >= 0 && ! cursor.isNull(columnIndices[GEN_ID_CACERT])) {
             gen_caCert = cursor.getString(columnIndices[GEN_ID_CACERT]);
@@ -916,6 +936,8 @@ public abstract class AbstractConnectionBean extends com.antlersoft.android.dbim
         gen_sshHostKey = values.getAsString(GEN_FIELD_SSHHOSTKEY);
         gen_address = values.getAsString(GEN_FIELD_ADDRESS);
         gen_port = (int)values.getAsInteger(GEN_FIELD_PORT);
+        gen_nt_address = values.getAsString(GEN_FIELD_NT_ADDRESS);
+        gen_nt_port = (int)values.getAsInteger(GEN_FIELD_NT_PORT);
         gen_caCert = values.getAsString(GEN_FIELD_CACERT);
         gen_caCertPath = values.getAsString(GEN_FIELD_CACERTPATH);
         gen_tlsPort = (int)values.getAsInteger(GEN_FIELD_TLSPORT);

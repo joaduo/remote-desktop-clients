@@ -80,6 +80,7 @@ public class ConnectionBean extends AbstractConnectionBean implements Comparable
         }
         set_Id(0);
         setAddress("");
+        setNTAddress("");
         setPassword("");
         setKeepPassword(true);
         setNickname("");
@@ -113,6 +114,7 @@ public class ConnectionBean extends AbstractConnectionBean implements Comparable
         setUserName("");
         setRdpDomain("");
         setPort(Constants.DEFAULT_PROTOCOL_PORT);
+        setNTPort(Constants.DEFAULT_NT_PROTOCOL_PORT);
         setCaCert("");
         setCaCertPath("");
         setTlsPort(-1);
@@ -587,6 +589,12 @@ public class ConnectionBean extends AbstractConnectionBean implements Comparable
         }
         if ( result == 0) {
             result = getPort() - another.getPort();
+        }
+        if (result == 0) {
+            result = getNTAddress().compareTo(another.getNTAddress());
+        }
+        if ( result == 0) {
+            result = getNTPort() - another.getNTPort();
         }
         if (result == 0) {
             result = getSshServer().compareTo(another.getSshServer());
