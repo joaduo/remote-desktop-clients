@@ -16,6 +16,12 @@ import com.undatech.opaque.input.RemoteKeyboard;
 import com.undatech.opaque.input.RdpKeyboardMapper;
 import com.undatech.opaque.input.RemotePointer;
 
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+
 public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyProcessingListener,
                                         LibFreeRDP.UIEventListener, LibFreeRDP.EventListener {
     static final String TAG = "RdpCommunicator";
@@ -59,7 +65,7 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
                            Viewable viewable, String username, String domain, String password) {
         // This is necessary because it initializes a synchronizedMap referenced later.
         this.freeRdpApp = new GlobalApp();
-
+        patchFreeRdpCore();
         // Create a manual bookmark and populate it from settings.
         this.bookmark = new ManualBookmark();
         this.context = context;
@@ -70,6 +76,20 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
         this.domain = domain;
         this.password = password;
         initSession(username, domain, password);
+    }
+
+    private void patchFreeRdpCore() {
+        Class cls = this.freeRdpApp.getClass();
+        try {
+            Log.i(TAG, "Initializing sessionMap in GlobalApp");
+            Field sessionMap = cls.getDeclaredField("sessionMap");
+            sessionMap.setAccessible(true);
+            sessionMap.set(this.freeRdpApp, Collections.synchronizedMap(new HashMap<Long, SessionState>()));
+        } catch (NoSuchFieldException e) {
+            Log.e(TAG, "There is no longer a sessionMap field in GlobalApp");
+        } catch (IllegalAccessException e) {
+            Log.e(TAG, "The field sessionMap in GlobalApp was not accessible despite our attempts");
+        }
     }
 
     @Override
@@ -151,7 +171,7 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
 
     public class DisconnectThread extends Thread {
         long instance;
-        
+
         public DisconnectThread (long i) {
             this.instance = i;
         }
@@ -243,7 +263,8 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
         android.util.Log.e(TAG, "Unicode character: " + unicodeKey);
         sendModifierKeys(true);
         try { Thread.sleep(5); } catch (InterruptedException e) {}
-        //LibFreeRDP.sendUnicodeKeyEvent(session.getInstance(), unicodeKey);
+        LibFreeRDP.sendUnicodeKeyEvent(session.getInstance(), unicodeKey, true);
+        LibFreeRDP.sendUnicodeKeyEvent(session.getInstance(), unicodeKey, false);
         sendModifierKeys(false);
     }
 
@@ -275,7 +296,8 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
                                         int remoteHeight, boolean wallpaper, boolean fontSmoothing,
                                         boolean desktopComposition, boolean fullWindowDrag,
                                         boolean menuAnimations, boolean theming, boolean redirectSdCard,
-                                        boolean consoleMode, int redirectSound, boolean enableRecording) {
+                                        boolean consoleMode, int redirectSound, boolean enableRecording,
+                                        boolean enableRemoteFx, boolean enableGfx, boolean enableGfxH264) {
         // Set a writable data directory
         //LibFreeRDP.setDataDirectory(session.getInstance(), getContext().getFilesDir().toString());
         // Get the address and port (based on whether an SSH tunnel is being established or not).
@@ -297,13 +319,15 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
 
         // Set performance flags.
         BookmarkBase.PerformanceFlags performanceFlags = bookmark.getPerformanceFlags();
-        performanceFlags.setRemoteFX(false);
+        performanceFlags.setRemoteFX(enableRemoteFx);
         performanceFlags.setWallpaper(wallpaper);
         performanceFlags.setFontSmoothing(fontSmoothing);
         performanceFlags.setDesktopComposition(desktopComposition);
         performanceFlags.setFullWindowDrag(fullWindowDrag);
         performanceFlags.setMenuAnimations(menuAnimations);
         performanceFlags.setTheming(theming);
+        performanceFlags.setGfx(enableGfx);
+        performanceFlags.setH264(enableGfxH264);
 
         BookmarkBase.AdvancedSettings advancedSettings = bookmark.getAdvancedSettings();
         advancedSettings.setRedirectSDCard(redirectSdCard);
@@ -355,7 +379,7 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
             connect();
         } else if (authenticationAttempted && !myself.isInNormalProtocol()) {
             Log.v(TAG, "Sending message: RDP_AUTH_FAILED");
-            handler.sendEmptyMessage(RemoteClientLibConstants.RDP_AUTH_FAILED);
+            handler.sendEmptyMessage(RemoteClientLibConstants.GET_RDP_CREDENTIALS);
         } else if (!disconnectRequested && !myself.isInNormalProtocol()) {
             Log.v(TAG, "Sending message: RDP_UNABLE_TO_CONNECT");
             handler.sendEmptyMessage(RemoteClientLibConstants.RDP_UNABLE_TO_CONNECT);
@@ -457,9 +481,7 @@ public class RdpCommunicator implements RfbConnectable, RdpKeyboardMapper.KeyPro
         if (viewable != null && session != null) {
             Bitmap bitmap = viewable.getBitmap();
             if (bitmap != null) {
-                synchronized (viewable) {
-                    LibFreeRDP.updateGraphics(session.getInstance(), bitmap, x, y, width, height);
-                }
+                LibFreeRDP.updateGraphics(session.getInstance(), bitmap, x, y, width, height);
                 viewable.reDraw(x, y, width, height);
             }
         }

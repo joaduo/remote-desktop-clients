@@ -1,0 +1,74 @@
+v5.0.2
+- Samsung DEX fixes
+- Better handling of Extra Keys visibility 
+- Debug logging of files in app directory
+- Main grid activity fixes.
+v5.0.1
+- Fix for annoying permissions request loop
+- Performance improvements
+- Security updates
+- Improved vibration for gestures and on-screen keys 
+- Deadlock in SPICE library fix
+- Many other bugfixes 
+v5.0.0
+- Many improvements and fixes
+- Improved UX and error messaging
+- Improved settings import/export functionality
+- Updated help
+- Bufixes and UX improvements for on-screen buttons 
+v4.3.0
+- Fix for SSH key generation instructions.
+- Fixes for devices with curved screens
+- Fixes to allow no overlap of on-screen buttons with remote desktop.
+- Fixes for erratic pointer behavior around screen edges.
+- Fixes for devices with a notch.
+v1.5.2
+- Security updates
+- Stability fixes for Android 10
+v1.5.1
+- 64-bit support
+- Bugfixes
+v1.5.0
+- Ability to specify custom port for PVE
+- Support for SPICE server mouse mode
+v1.4.9
+- Bugfixes
+v1.4.8
+- Ability to copy logcat
+v1.4.7
+- Fix for scrolling in Single Handed mode
+- Bugfixes for Proxmox 
+v1.4.6
+- Fix for Menu + immersive mode live-lock on some devices
+- Updated spice library
+v1.4.5
+- Input mode bugfixes
+- Security and protocol library updates
+v1.4.4
+- New, relocatable toolbar
+- Import/Export settings
+- VNC console support via URI intent and bVNC
+- Numerous bugfixes
+- Library upgrades
+v1.4.3
+- TFA/OTP support for Proxmox
+- Several bugfixes
+v1.4.2
+- Security updates
+- Native library updates
+v1.4.1
+- Security update
+- Update to gstreamer 1.x
+- Update to libspice
+- Improved error reporting
+- Fixes for API changed in oVirt 4.x
+v1.4.0
+- Immersive mode!
+v1.3.8
+- Fix for crash on Android 6 with Chrome and .vv files.
+v1.3.6
+- Fix for on-screen menu button
+- Fix for crash when no network
+- Text improvements
+v1.3.5
+- Security update
