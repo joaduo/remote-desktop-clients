@@ -27,7 +27,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
-import com.iiordanov.bVNC.R;
+//import com.iiordanov.bVNC.R;
+import com.undatech.remoteClientUi.R;
 import com.iiordanov.bVNC.RemoteCanvas;
 import com.iiordanov.bVNC.RemoteCanvasActivity;
 import com.iiordanov.bVNC.gfxtablet.NetEvent;
@@ -44,8 +45,8 @@ public class InputHandlerGfxTablet extends InputHandlerGeneric {
 	NetworkClient netClient;
 
 	public InputHandlerGfxTablet(RemoteCanvasActivity activity, RemoteCanvas canvas,
-								 RemotePointer pointer, Vibrator myVibrator) {
-		super(activity, canvas, pointer, myVibrator);
+								 RemotePointer pointer) {
+		super(activity, canvas, pointer);
 
 		// create network client in a separate thread
 		netClient = new NetworkClient(canvas.ipNetworkTablet, canvas.portNetworkTablet);
