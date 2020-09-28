@@ -60,6 +60,8 @@ public class bVNC extends MainConfiguration {
     private EditText sshPort;
     private EditText sshUser;
     private EditText portText;
+    private EditText ipTextNetworkTablet;
+    private EditText portTextNetworkTablet;
     private EditText passwordText;
     private Button repeaterButton;
     private Button buttonCustomizeX11Vnc;
